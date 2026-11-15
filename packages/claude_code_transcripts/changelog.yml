@@ -2,4 +2,4 @@
   changes:
   - description: 'Initial release: Claude Code transcripts, Claude Desktop logs, ML inference statistics, dashboards.'
     type: enhancement
-    link: https://github.com/elastic/integrations/pull/1
+    link: https://github.com/elastic/integrations/pull/22450
