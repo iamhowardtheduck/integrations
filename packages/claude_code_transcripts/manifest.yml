@@ -17,6 +17,19 @@ icons:
   title: Claude Code Transcripts
   size: 64x64
   type: image/svg+xml
+screenshots:
+- src: /img/dashboard-business-analytics.png
+  title: Business Analytics dashboard
+  size: 1600x1800
+  type: image/png
+- src: /img/dashboard-security.png
+  title: Security dashboard
+  size: 1600x2164
+  type: image/png
+- src: /img/dashboard-ml-inference-admin.png
+  title: ML Inference Admin dashboard
+  size: 1600x2052
+  type: image/png
 policy_templates:
 - name: claude_code
   title: Claude Code and Claude Desktop
