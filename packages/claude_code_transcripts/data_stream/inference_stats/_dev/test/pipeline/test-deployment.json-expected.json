@@ -1,0 +1,49 @@
+{
+    "expected": [
+        {
+            "data_stream": {
+                "dataset": "claude_code_transcripts.inference_stats",
+                "namespace": "default",
+                "type": "metrics"
+            },
+            "ecs": {
+                "version": "9.3.0"
+            },
+            "ml_inference": {
+                "deployment": {
+                    "adaptive_enabled": false,
+                    "allocation_state": "fully_allocated",
+                    "allocations": 1,
+                    "avg_inference_ms": 124.162874251497,
+                    "avg_inference_ms_excl_cache": 1092.2225201072386,
+                    "cache_hit_count": 2967,
+                    "cache_hits_last_minute": 0,
+                    "error_count": 0,
+                    "est_utilization": 0.0,
+                    "id": "cardiffnlp__twitter-roberta-base-offensive",
+                    "inference_count": 3340,
+                    "model_id": "cardiffnlp__twitter-roberta-base-offensive",
+                    "nodes": [
+                        "es-node-01"
+                    ],
+                    "peak_throughput_per_minute": 282,
+                    "pending_per_allocation": 0.0,
+                    "pending_requests": 0,
+                    "priority": "normal",
+                    "queue_capacity": 10000,
+                    "queue_fill": 0.0,
+                    "rejected_execution_count": 0,
+                    "routing_states": [
+                        "started"
+                    ],
+                    "state": "started",
+                    "target_allocations": 1,
+                    "threads_per_allocation": 1,
+                    "throughput_last_minute": 0,
+                    "timeout_count": 0
+                },
+                "kind": "deployment"
+            }
+        }
+    ]
+}

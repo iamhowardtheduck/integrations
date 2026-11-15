@@ -1,0 +1,127 @@
+{
+    "expected": [
+        {
+            "@timestamp": "2026-11-14T10:00:05.000Z",
+            "claude_code": {
+                "cwd": "C:\\src\\api",
+                "human_prompt": false,
+                "message": {
+                    "content": [
+                        {
+                            "id": "toolu_01",
+                            "input": {
+                                "command": "git status",
+                                "description": "Show working tree status"
+                            },
+                            "name": "Bash",
+                            "type": "tool_use"
+                        }
+                    ],
+                    "id": "msg_011",
+                    "model": "claude-sonnet-5-5",
+                    "role": "assistant",
+                    "stop_reason": "tool_use",
+                    "usage": {
+                        "cache_creation_input_tokens": 500,
+                        "cache_read_input_tokens": 12000,
+                        "input_tokens": 3,
+                        "output_tokens": 40
+                    }
+                },
+                "project_slug": "C--src-api",
+                "requestId": "req_011",
+                "requestedModel": "claude-sonnet-5-5",
+                "sessionId": "3f1c2b7e-0000-4000-8000-000000000002",
+                "tool_input": {
+                    "command": [
+                        "git status"
+                    ],
+                    "description": [
+                        "Show working tree status"
+                    ]
+                },
+                "tool_names": [
+                    "Bash"
+                ],
+                "type": "assistant",
+                "uuid": "11111111-0000-4000-8000-000000000002",
+                "version": "2.1.0"
+            },
+            "data_stream": {
+                "dataset": "claude_code_transcripts.transcript",
+                "namespace": "default",
+                "type": "logs"
+            },
+            "ecs": {
+                "version": "9.3.0"
+            },
+            "event": {
+                "action": "tool-use",
+                "id": "11111111-0000-4000-8000-000000000002",
+                "kind": "event"
+            },
+            "gen_ai": {
+                "conversation": {
+                    "id": "3f1c2b7e-0000-4000-8000-000000000002"
+                },
+                "operation": {
+                    "name": "chat"
+                },
+                "provider": {
+                    "name": "anthropic"
+                },
+                "request": {
+                    "model": "claude-sonnet-5-5"
+                },
+                "response": {
+                    "finish_reasons": [
+                        "tool_use"
+                    ],
+                    "id": "msg_011",
+                    "model": "claude-sonnet-5-5"
+                },
+                "system": "anthropic",
+                "tool": {
+                    "call": {
+                        "id": [
+                            "toolu_01"
+                        ]
+                    },
+                    "name": [
+                        "Bash"
+                    ]
+                },
+                "usage": {
+                    "cache_creation": {
+                        "input_tokens": 500
+                    },
+                    "cache_read": {
+                        "input_tokens": 12000
+                    },
+                    "input_tokens": 12503,
+                    "output_tokens": 40
+                }
+            },
+            "log": {
+                "file": {
+                    "path": "C:\\Users\\bob\\.claude\\projects\\C--src-api\\3f1c2b7e-0000-4000-8000-000000000002.jsonl"
+                }
+            },
+            "process": {
+                "working_directory": "C:\\src\\api"
+            },
+            "related": {
+                "user": [
+                    "bob"
+                ]
+            },
+            "service": {
+                "name": "claude-code",
+                "version": "2.1.0"
+            },
+            "user": {
+                "name": "bob"
+            }
+        }
+    ]
+}

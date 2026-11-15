@@ -1,0 +1,25 @@
+{
+    "expected": [
+        {
+            "data_stream": {
+                "dataset": "claude_code_transcripts.inference_stats",
+                "namespace": "default",
+                "type": "metrics"
+            },
+            "ecs": {
+                "version": "9.3.0"
+            },
+            "ml_inference": {
+                "kind": "pipeline",
+                "pipeline": {
+                    "count": 93,
+                    "current": 0,
+                    "failed": 0,
+                    "name": "logs-claude_code_transcripts.transcript-0.1.0",
+                    "nodes_active": 4,
+                    "time_in_millis": 96822
+                }
+            }
+        }
+    ]
+}
