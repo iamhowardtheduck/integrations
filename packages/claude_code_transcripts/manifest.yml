@@ -1,0 +1,35 @@
+format_version: 3.6.0
+name: claude_code_transcripts
+title: Claude Code Transcripts
+version: 0.1.0
+description: Collect Claude Code session transcripts and Claude Desktop app/MCP logs from disk with Elastic Agent, mapped to ECS and gen_ai.*, with secret redaction and optional ML inference on prompts.
+type: integration
+categories:
+- security
+- observability
+conditions:
+  kibana:
+    version: ^9.4.0
+  elastic:
+    subscription: basic
+icons:
+- src: /img/icon.svg
+  title: Claude Code Transcripts
+  size: 64x64
+  type: image/svg+xml
+policy_templates:
+- name: claude_code
+  title: Claude Code and Claude Desktop
+  description: Claude Code transcripts (~/.claude/projects) and Claude Desktop logs
+  inputs:
+  - type: filestream
+    title: Collect Claude Code transcripts and Claude Desktop logs
+    description: Tail the JSONL transcripts and the Desktop app/MCP log files
+  - type: cel
+    title: Collect ML inference statistics
+    description: Poll Elasticsearch trained-model and ingest-pipeline statistics for the [ML Inference] Admin dashboard (optional)
+owner:
+  github: elastic/security-service-integrations
+  type: community
+source:
+  license: Elastic-2.0

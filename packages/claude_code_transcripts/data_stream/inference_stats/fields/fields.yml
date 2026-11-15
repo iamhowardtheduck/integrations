@@ -1,0 +1,79 @@
+- name: ml_inference
+  type: group
+  fields:
+  - name: deployment
+    type: group
+    fields:
+    - name: adaptive_enabled
+      type: boolean
+    - name: adaptive_max
+      type: long
+    - name: adaptive_min
+      type: long
+    - name: allocation_state
+      type: keyword
+    - name: allocations
+      type: long
+    - name: avg_inference_ms
+      type: double
+    - name: avg_inference_ms_excl_cache
+      type: double
+    - name: cache_hit_count
+      type: long
+    - name: cache_hits_last_minute
+      type: long
+    - name: error_count
+      type: long
+    - name: est_utilization
+      type: double
+    - name: id
+      type: keyword
+    - name: inference_count
+      type: long
+    - name: model_id
+      type: keyword
+    - name: nodes
+      type: keyword
+    - name: peak_throughput_per_minute
+      type: long
+    - name: pending_per_allocation
+      type: double
+    - name: pending_requests
+      type: long
+    - name: priority
+      type: keyword
+    - name: queue_capacity
+      type: long
+    - name: queue_fill
+      type: double
+    - name: rejected_execution_count
+      type: long
+    - name: routing_states
+      type: keyword
+    - name: state
+      type: keyword
+    - name: target_allocations
+      type: long
+    - name: threads_per_allocation
+      type: long
+    - name: throughput_last_minute
+      type: long
+    - name: timeout_count
+      type: long
+  - name: kind
+    type: keyword
+  - name: pipeline
+    type: group
+    fields:
+    - name: count
+      type: long
+    - name: current
+      type: long
+    - name: failed
+      type: long
+    - name: name
+      type: keyword
+    - name: nodes_active
+      type: long
+    - name: time_in_millis
+      type: long

@@ -1,0 +1,60 @@
+title: ML inference statistics
+type: metrics
+streams:
+- input: cel
+  title: ML inference statistics
+  template_path: cel.yml.hbs
+  enabled: false
+  description: Polls _ml/trained_models/_stats and _nodes/stats/ingest every interval. Feeds the [ML Inference] Admin dashboard. Enable it only if you use the integration's ML inference.
+  vars:
+  - name: url
+    type: text
+    title: Elasticsearch URL
+    description: Elasticsearch endpoint to poll, for example https://localhost:9200.
+    multi: false
+    required: true
+    show_user: true
+    default: https://localhost:9200
+  - name: api_key
+    type: password
+    title: API key
+    description: Base64-encoded Elasticsearch API key with the monitor and monitor_ml cluster privileges.
+    multi: false
+    required: true
+    show_user: true
+    secret: true
+  - name: interval
+    type: text
+    title: Interval
+    description: How often to sample.
+    multi: false
+    required: true
+    show_user: true
+    default: 1m
+  - name: pipeline_prefix
+    type: text
+    title: Pipeline name prefix
+    description: Ingest pipelines whose statistics are collected.
+    multi: false
+    required: true
+    show_user: false
+    default: logs-claude_code_transcripts.
+  - name: ssl
+    type: yaml
+    title: SSL configuration
+    description: SSL options, for example certificate_authorities for a private CA.
+    multi: false
+    required: false
+    show_user: false
+    default: |
+      #certificate_authorities:
+      #  - |
+      #    -----BEGIN CERTIFICATE-----
+  - name: tags
+    type: text
+    title: Tags
+    description: Extra tags.
+    multi: true
+    required: false
+    show_user: false
+    default: []

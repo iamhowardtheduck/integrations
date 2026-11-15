@@ -1,0 +1,604 @@
+- name: claude_code
+  type: group
+  dynamic: false
+  fields:
+  - name: advisorModel
+    type: keyword
+  - name: apiBlockIndex
+    type: long
+  - name: attributionMcpServer
+    type: keyword
+  - name: attributionMcpTool
+    type: keyword
+  - name: attributionPlugin
+    type: keyword
+  - name: attributionSkill
+    type: keyword
+  - name: cwd
+    type: keyword
+  - name: effort
+    type: keyword
+  - name: entrypoint
+    type: keyword
+  - name: gitBranch
+    type: keyword
+  - name: human_prompt
+    type: boolean
+  - name: inference
+    type: group
+    fields:
+    - name: classify_calls
+      type: short
+    - name: classify_ms
+      type: float
+    - name: embedding_ms
+      type: float
+    - name: steps
+      type: group
+      fields:
+      - name: injection_ms
+        type: float
+      - name: jailbreak_ms
+        type: float
+      - name: ner_ms
+        type: float
+      - name: offensive_ms
+        type: float
+      - name: toxicity_ms
+        type: float
+      - name: zeroshot_agent_action_ms
+        type: float
+      - name: zeroshot_interaction_ms
+        type: float
+      - name: zeroshot_moderation_ms
+        type: float
+      - name: zeroshot_security_ms
+        type: float
+      - name: zeroshot_task_ms
+        type: float
+    - name: total_ms
+      type: float
+  - name: interruptedMessageId
+    type: keyword
+  - name: isCompactSummary
+    type: boolean
+  - name: isMeta
+    type: boolean
+  - name: isSidechain
+    type: boolean
+  - name: isVisibleInTranscriptOnly
+    type: boolean
+  - name: message
+    type: group
+    fields:
+    - name: content
+      type: group
+      dynamic: false
+      fields:
+      - name: caller
+        type: group
+        fields:
+        - name: type
+          type: keyword
+      - name: content
+        type: group
+        dynamic: false
+        fields:
+        - name: source
+          type: group
+          fields:
+          - name: data
+            type: keyword
+          - name: media_type
+            type: keyword
+          - name: type
+            type: keyword
+        - name: text
+          type: match_only_text
+        - name: tool_name
+          type: keyword
+        - name: type
+          type: keyword
+      - name: id
+        type: keyword
+      - name: input
+        type: flattened
+        ignore_above: 8191
+      - name: is_error
+        type: boolean
+      - name: name
+        type: keyword
+      - name: signature
+        type: keyword
+      - name: text
+        type: match_only_text
+      - name: thinking
+        type: match_only_text
+      - name: tool_use_id
+        type: keyword
+      - name: type
+        type: keyword
+    - name: diagnostics
+      type: group
+      fields:
+      - name: cache_miss_reason
+        type: group
+        fields:
+        - name: type
+          type: keyword
+    - name: id
+      type: keyword
+    - name: input_transformations
+      type: keyword
+    - name: model
+      type: keyword
+    - name: role
+      type: keyword
+    - name: stop_reason
+      type: keyword
+    - name: type
+      type: keyword
+    - name: usage
+      type: group
+      fields:
+      - name: cache_creation
+        type: group
+        fields:
+        - name: ephemeral_1h_input_tokens
+          type: long
+        - name: ephemeral_5m_input_tokens
+          type: long
+      - name: cache_creation_input_tokens
+        type: long
+      - name: cache_read_input_tokens
+        type: long
+      - name: inference_geo
+        type: keyword
+      - name: input_tokens
+        type: long
+      - name: iterations
+        type: group
+        fields:
+        - name: cache_creation
+          type: group
+          fields:
+          - name: ephemeral_1h_input_tokens
+            type: long
+          - name: ephemeral_5m_input_tokens
+            type: long
+        - name: cache_creation_input_tokens
+          type: long
+        - name: cache_read_input_tokens
+          type: long
+        - name: input_tokens
+          type: long
+        - name: output_tokens
+          type: long
+        - name: type
+          type: keyword
+      - name: output_tokens
+        type: long
+      - name: output_tokens_details
+        type: group
+        fields:
+        - name: thinking_tokens
+          type: long
+      - name: server_tool_use
+        type: group
+        fields:
+        - name: web_fetch_requests
+          type: long
+        - name: web_search_requests
+          type: long
+      - name: service_tier
+        type: keyword
+      - name: speed
+        type: keyword
+  - name: origin
+    type: group
+    fields:
+    - name: kind
+      type: keyword
+    - name: producer
+      type: keyword
+    - name: runId
+      type: keyword
+  - name: parentUuid
+    type: keyword
+  - name: perTurnEffort
+    type: keyword
+  - name: permissionDecision
+    type: group
+    fields:
+    - name: circuitBreaker
+      type: keyword
+    - name: classifierCategory
+      type: keyword
+    - name: decision
+      type: keyword
+    - name: grantScope
+      type: keyword
+    - name: reasonCode
+      type: keyword
+    - name: reasonType
+      type: keyword
+    - name: source
+      type: keyword
+  - name: permissionMode
+    type: keyword
+  - name: project_slug
+    type: keyword
+  - name: promptCacheRequested
+    type: keyword
+  - name: promptId
+    type: keyword
+  - name: promptSource
+    type: keyword
+  - name: prompt_classification
+    type: group
+    fields:
+    - name: agent_action
+      type: keyword
+    - name: agent_action_confidence
+      type: float
+    - name: categories
+      type: keyword
+    - name: entities
+      type: group
+      fields:
+      - name: location
+        type: keyword
+        ignore_above: 256
+      - name: misc
+        type: keyword
+        ignore_above: 256
+      - name: organization
+        type: keyword
+        ignore_above: 256
+      - name: person
+        type: keyword
+        ignore_above: 256
+    - name: errors
+      type: keyword
+      ignore_above: 1024
+    - name: flagged
+      type: boolean
+    - name: interaction
+      type: keyword
+    - name: interaction_confidence
+      type: float
+    - name: moderation
+      type: keyword
+    - name: scores
+      type: group
+      fields:
+      - name: agent_action
+        type: group
+        fields:
+        - name: access_change
+          type: float
+        - name: casual_conversation
+          type: float
+        - name: deploy
+          type: float
+        - name: destructive
+          type: float
+        - name: disable_security_tooling
+          type: float
+        - name: edit_code
+          type: float
+        - name: production_change
+          type: float
+        - name: read_only
+          type: float
+      - name: interaction
+        type: group
+        fields:
+        - name: assistant_usage
+          type: float
+        - name: correction
+          type: float
+        - name: instruction
+          type: float
+        - name: satisfaction
+          type: float
+      - name: jailbreak
+        type: float
+      - name: moderation
+        type: group
+        fields:
+        - name: harassment
+          type: float
+        - name: hate_speech
+          type: float
+        - name: illegal_activity
+          type: float
+        - name: self_harm
+          type: float
+        - name: sexual_content
+          type: float
+        - name: violence
+          type: float
+        - name: weapons
+          type: float
+      - name: offensive
+        type: float
+      - name: prompt_injection
+        type: float
+      - name: security
+        type: group
+        fields:
+        - name: casual_conversation
+          type: float
+        - name: credential_theft
+          type: float
+        - name: data_exfiltration
+          type: float
+        - name: defensive_security
+          type: float
+        - name: detection_evasion
+          type: float
+        - name: malware_exploit_dev
+          type: float
+        - name: normal_work
+          type: float
+        - name: phishing_social_engineering
+          type: float
+        - name: privilege_escalation
+          type: float
+        - name: reconnaissance
+          type: float
+        - name: security_bypass
+          type: float
+      - name: security_risk
+        type: float
+      - name: task
+        type: group
+        fields:
+        - name: data_analysis
+          type: float
+        - name: design_planning
+          type: float
+        - name: documentation
+          type: float
+        - name: explain_code
+          type: float
+        - name: feedback
+          type: float
+        - name: fix_bug
+          type: float
+        - name: general_question
+          type: float
+        - name: infra_devops
+          type: float
+        - name: non_technical_writing
+          type: float
+        - name: refactor
+          type: float
+        - name: review_code
+          type: float
+        - name: write_code
+          type: float
+        - name: write_tests
+          type: float
+      - name: toxic
+        type: float
+    - name: secrets
+      type: group
+      fields:
+      - name: count
+        type: long
+      - name: findings
+        type: group
+        fields:
+        - name: length
+          type: long
+        - name: type
+          type: keyword
+      - name: types
+        type: keyword
+    - name: security
+      type: keyword
+    - name: security_confidence
+      type: float
+    - name: semantic
+      type: group
+      description: Ingest-time semantic threat match (prompt embedding vs tools/semantic-concepts.json)
+      fields:
+      - name: score
+        type: float
+        description: Best cosine similarity to any threat phrase
+      - name: concept
+        type: keyword
+        description: Concept of the best-matching phrase
+      - name: threshold
+        type: float
+        description: Threshold in effect when the prompt was indexed
+      - name: scores
+        type: group
+        fields:
+        - name: credential_theft
+          type: float
+        - name: data_exfiltration
+          type: float
+        - name: malware_development
+          type: float
+        - name: defense_evasion
+          type: float
+        - name: privilege_escalation
+          type: float
+        - name: unauthorized_access
+          type: float
+        - name: social_engineering
+          type: float
+        - name: reconnaissance
+          type: float
+        - name: persistence
+          type: float
+        - name: prompt_injection
+          type: float
+    - name: task
+      type: keyword
+    - name: task_confidence
+      type: float
+  - name: prompt_embedding_error
+    type: keyword
+    ignore_above: 1024
+  - name: prompt_embedding_model
+    type: keyword
+  - name: queueSkipAttachments
+    type: boolean
+  - name: requestId
+    type: keyword
+  - name: requestRef
+    type: keyword
+  - name: requestedModel
+    type: keyword
+  - name: sandboxed
+    type: boolean
+  - name: secrets
+    type: group
+    fields:
+    - name: count
+      type: long
+    - name: errors
+      type: keyword
+      ignore_above: 1024
+    - name: findings
+      type: group
+      fields:
+      - name: length
+        type: long
+      - name: type
+        type: keyword
+    - name: redacted
+      type: boolean
+    - name: types
+      type: keyword
+  - name: serverClassifierContext
+    type: flattened
+    ignore_above: 8191
+  - name: serverClassifierRequest
+    type: keyword
+  - name: sessionId
+    type: keyword
+  - name: session_id
+    type: keyword
+  - name: slug
+    type: keyword
+  - name: sourceToolAssistantUUID
+    type: keyword
+  - name: sourceToolUseID
+    type: keyword
+  - name: thinkingDisplay
+    type: keyword
+  - name: thinkingDurationMs
+    type: long
+  - name: toolDenialKind
+    type: keyword
+  - name: toolInputStreamMs
+    type: long
+  - name: tool_input
+    type: group
+    fields:
+    - name: command
+      type: wildcard
+      ignore_above: 8191
+    - name: description
+      type: match_only_text
+    - name: file_path
+      type: keyword
+      ignore_above: 1024
+    - name: skill
+      type: keyword
+    - name: url
+      type: keyword
+      ignore_above: 2048
+  - name: tool_names
+    type: keyword
+  - name: turnCompanion
+    type: boolean
+  - name: turnOrigin
+    type: keyword
+  - name: turnPosition
+    type: group
+    fields:
+    - name: promptIndex
+      type: long
+    - name: turnIndex
+      type: long
+  - name: type
+    type: keyword
+  - name: userType
+    type: keyword
+  - name: uuid
+    type: keyword
+  - name: version
+    type: keyword
+  - name: wireIngestContext
+    type: flattened
+    ignore_above: 8191
+  - name: wireToolInputs
+    type: flattened
+    ignore_above: 8191
+- name: gen_ai
+  type: group
+  fields:
+  - name: conversation
+    type: group
+    fields:
+    - name: id
+      type: keyword
+  - name: operation
+    type: group
+    fields:
+    - name: name
+      type: keyword
+  - name: provider
+    type: group
+    fields:
+    - name: name
+      type: keyword
+  - name: request
+    type: group
+    fields:
+    - name: model
+      type: keyword
+  - name: response
+    type: group
+    fields:
+    - name: finish_reasons
+      type: keyword
+    - name: id
+      type: keyword
+    - name: model
+      type: keyword
+  - name: system
+    type: keyword
+  - name: tool
+    type: group
+    fields:
+    - name: call
+      type: group
+      fields:
+      - name: id
+        type: keyword
+    - name: name
+      type: keyword
+  - name: usage
+    type: group
+    fields:
+    - name: cache_creation
+      type: group
+      fields:
+      - name: input_tokens
+        type: long
+    - name: cache_read
+      type: group
+      fields:
+      - name: input_tokens
+        type: long
+    - name: input_tokens
+      type: long
+    - name: output_tokens
+      type: long

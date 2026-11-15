@@ -1,0 +1,541 @@
+---
+description: Classify human prompts from Claude Code transcripts with NLP models (called from claude-code-transcript)
+processors:
+- inference:
+    on_failure:
+    - append:
+        field: claude_code.prompt_classification.errors
+        value: 'injection: {{{_ingest.on_failure_message}}}'
+        tag: classify-injection_on_failure_append_claude_code_prompt_classification_errors
+    target_field: _ml.injection
+    inference_config:
+      text_classification:
+        num_top_classes: -1
+    field_map:
+      message: text_field
+    tag: classify-injection
+    model_id: protectai__deberta-v3-base-prompt-injection-v2
+- script:
+    ignore_failure: true
+    description: Elapsed ms of the preceding inference step (injection_ms)
+    tag: inference-timer-injection
+    params:
+      step: injection_ms
+    lang: painless
+    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+- inference:
+    on_failure:
+    - append:
+        field: claude_code.prompt_classification.errors
+        value: 'jailbreak: {{{_ingest.on_failure_message}}}'
+        tag: classify-jailbreak_on_failure_append_claude_code_prompt_classification_errors
+    target_field: _ml.jailbreak
+    inference_config:
+      text_classification:
+        num_top_classes: -1
+    field_map:
+      message: text_field
+    tag: classify-jailbreak
+    model_id: jackhhao__jailbreak-classifier
+- script:
+    ignore_failure: true
+    description: Elapsed ms of the preceding inference step (jailbreak_ms)
+    tag: inference-timer-jailbreak
+    params:
+      step: jailbreak_ms
+    lang: painless
+    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+- inference:
+    on_failure:
+    - append:
+        field: claude_code.prompt_classification.errors
+        value: 'toxicity: {{{_ingest.on_failure_message}}}'
+        tag: classify-toxicity_on_failure_append_claude_code_prompt_classification_errors
+    target_field: _ml.toxicity
+    inference_config:
+      text_classification:
+        num_top_classes: -1
+    field_map:
+      message: text_field
+    tag: classify-toxicity
+    model_id: s-nlp__roberta_toxicity_classifier
+- script:
+    ignore_failure: true
+    description: Elapsed ms of the preceding inference step (toxicity_ms)
+    tag: inference-timer-toxicity
+    params:
+      step: toxicity_ms
+    lang: painless
+    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+- inference:
+    on_failure:
+    - append:
+        field: claude_code.prompt_classification.errors
+        value: 'offensive: {{{_ingest.on_failure_message}}}'
+        tag: classify-offensive_on_failure_append_claude_code_prompt_classification_errors
+    target_field: _ml.offensive
+    inference_config:
+      text_classification:
+        num_top_classes: -1
+    field_map:
+      message: text_field
+    tag: classify-offensive
+    model_id: cardiffnlp__twitter-roberta-base-offensive
+- script:
+    ignore_failure: true
+    description: Elapsed ms of the preceding inference step (offensive_ms)
+    tag: inference-timer-offensive
+    params:
+      step: offensive_ms
+    lang: painless
+    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+- inference:
+    on_failure:
+    - append:
+        field: claude_code.prompt_classification.errors
+        value: 'security: {{{_ingest.on_failure_message}}}'
+        tag: classify-security_on_failure_append_claude_code_prompt_classification_errors
+    target_field: _ml.security
+    inference_config:
+      zero_shot_classification:
+        multi_label: false
+        labels:
+        - malware or exploit development
+        - phishing or social engineering
+        - stealing or cracking credentials
+        - bypassing security controls
+        - evading antivirus or detection
+        - network scanning or reconnaissance
+        - data exfiltration
+        - privilege escalation
+        - defensive security or detection engineering
+        - normal software or IT work
+        - casual conversation
+    field_map:
+      message: text_field
+    tag: classify-security
+    model_id: cross-encoder__nli-deberta-v3-base-128
+    if: ctx.message instanceof String && ctx.message.trim().length() >= 20
+- script:
+    ignore_failure: true
+    description: Elapsed ms of the preceding inference step (zeroshot_security_ms)
+    tag: inference-timer-security
+    params:
+      step: zeroshot_security_ms
+    if: ctx.message instanceof String && ctx.message.trim().length() >= 20
+    lang: painless
+    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+- inference:
+    on_failure:
+    - append:
+        field: claude_code.prompt_classification.errors
+        value: 'agent_action: {{{_ingest.on_failure_message}}}'
+        tag: classify-agent_action_on_failure_append_claude_code_prompt_classification_errors
+    target_field: _ml.agent_action
+    inference_config:
+      zero_shot_classification:
+        multi_label: false
+        labels:
+        - deleting or dropping data, indices, files or infrastructure
+        - changing production systems
+        - disabling logging, monitoring or security tools
+        - changing access permissions or user accounts
+        - deploying or pushing code
+        - asking a question or reading information
+        - writing or editing code
+        - casual conversation
+    field_map:
+      message: text_field
+    tag: classify-agent_action
+    model_id: cross-encoder__nli-deberta-v3-base-128
+    if: ctx.message instanceof String && ctx.message.trim().length() >= 20
+- script:
+    ignore_failure: true
+    description: Elapsed ms of the preceding inference step (zeroshot_agent_action_ms)
+    tag: inference-timer-agent_action
+    params:
+      step: zeroshot_agent_action_ms
+    if: ctx.message instanceof String && ctx.message.trim().length() >= 20
+    lang: painless
+    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+- inference:
+    on_failure:
+    - append:
+        field: claude_code.prompt_classification.errors
+        value: 'task: {{{_ingest.on_failure_message}}}'
+        tag: classify-task_on_failure_append_claude_code_prompt_classification_errors
+    target_field: _ml.task
+    inference_config:
+      zero_shot_classification:
+        multi_label: false
+        labels:
+        - a request to write new code
+        - a request to fix a bug or error
+        - a request to explain or understand code
+        - a request to refactor or improve code
+        - a request to write tests
+        - a request to review code
+        - a request for infrastructure, DevOps or configuration work
+        - a request to query or analyze data
+        - a request to plan or design a system
+        - a request to write documentation
+        - a request to write non-technical text such as emails or reports
+        - a general knowledge question
+        - feedback on a previous answer
+    field_map:
+      message: text_field
+    tag: classify-task
+    model_id: cross-encoder__nli-deberta-v3-base-128
+- script:
+    ignore_failure: true
+    description: Elapsed ms of the preceding inference step (zeroshot_task_ms)
+    tag: inference-timer-task
+    params:
+      step: zeroshot_task_ms
+    lang: painless
+    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+- inference:
+    on_failure:
+    - append:
+        field: claude_code.prompt_classification.errors
+        value: 'interaction: {{{_ingest.on_failure_message}}}'
+        tag: classify-interaction_on_failure_append_claude_code_prompt_classification_errors
+    target_field: _ml.interaction
+    inference_config:
+      zero_shot_classification:
+        multi_label: false
+        labels:
+        - an instruction or task request
+        - a complaint that something is wrong
+        - thanks or praise
+        - a question about Claude itself
+    field_map:
+      message: text_field
+    tag: classify-interaction
+    model_id: cross-encoder__nli-deberta-v3-base-128
+- script:
+    ignore_failure: true
+    description: Elapsed ms of the preceding inference step (zeroshot_interaction_ms)
+    tag: inference-timer-interaction
+    params:
+      step: zeroshot_interaction_ms
+    lang: painless
+    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+- inference:
+    on_failure:
+    - append:
+        field: claude_code.prompt_classification.errors
+        value: 'moderation: {{{_ingest.on_failure_message}}}'
+        tag: classify-moderation_on_failure_append_claude_code_prompt_classification_errors
+    target_field: _ml.moderation
+    inference_config:
+      zero_shot_classification:
+        multi_label: true
+        labels:
+        - violence
+        - self-harm
+        - sexual content
+        - hate speech
+        - harassment
+        - illegal activity
+        - weapons
+    field_map:
+      message: text_field
+    tag: classify-moderation
+    model_id: cross-encoder__nli-deberta-v3-base-128
+    if: ctx.message instanceof String && ctx.message.trim().length() >= 20
+- script:
+    ignore_failure: true
+    description: Elapsed ms of the preceding inference step (zeroshot_moderation_ms)
+    tag: inference-timer-moderation
+    params:
+      step: zeroshot_moderation_ms
+    if: ctx.message instanceof String && ctx.message.trim().length() >= 20
+    lang: painless
+    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+- inference:
+    on_failure:
+    - append:
+        field: claude_code.prompt_classification.errors
+        value: 'ner: {{{_ingest.on_failure_message}}}'
+        tag: classify-ner_on_failure_append_claude_code_prompt_classification_errors
+    target_field: _ml.ner
+    inference_config:
+      ner: {}
+    field_map:
+      message: text_field
+    tag: classify-ner
+    model_id: dslim__bert-base-ner
+- script:
+    ignore_failure: true
+    description: Elapsed ms of the preceding inference step (ner_ms)
+    tag: inference-timer-ner
+    params:
+      step: ner_ms
+    lang: painless
+    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+- script:
+    tag: aggregate
+    source: |
+      // probability of one class from a text_classification result (top_classes = all classes)
+      def prob(def r, String label) {
+        if (r == null || r.top_classes == null) { return null; }
+        for (def c : r.top_classes) { if (c.class_name == label) { return c.class_probability; } }
+        return null;
+      }
+
+      // Collect model outputs from _ml.* into claude_code.prompt_classification
+      def ml = ctx._ml;
+      if (ml == null) { return; }
+      def pc = ctx.claude_code.prompt_classification;
+      if (pc == null) { pc = new HashMap(); ctx.claude_code.prompt_classification = pc; }
+      List cats = new ArrayList();
+      Map scores = new HashMap();
+      boolean flagged = false;
+
+      // Binary classifiers (scores always kept; members of the 'agree' set only flag when all of them pass)
+      boolean agreeAll = true; boolean agreeAny = false;
+      for (def b : params.binary) {
+        def p = prob(ml[b.name], b.label);
+        if (p == null) { if (b.agree == true) { agreeAll = false; } continue; }
+        scores[b.category] = p;
+        if (b.agree == true) { agreeAny = true; if (p < b.t) { agreeAll = false; } }
+        else if (p >= b.t) { cats.add(b.category); flagged = true; }
+      }
+      if (agreeAny && agreeAll) {
+        for (def b : params.binary) { if (b.agree == true) { cats.add(b.category); } }
+        flagged = true;
+      }
+
+      // Zero-shot groups: multi-label -> list of keys; single-label -> top key + confidence
+      for (def g : params.zero_shot) {
+        def r = ml[g.name];
+        if (r == null || r.top_classes == null || r.top_classes.isEmpty()) { continue; }
+        // per-label scores: scores.<group>.<key>
+        Map gs = new HashMap();
+        for (def lc : r.top_classes) { gs[g.keys.getOrDefault(lc.class_name, lc.class_name)] = lc.class_probability; }
+        scores[g.name] = gs;
+        if (g.multi) {
+          List out = new ArrayList();
+          // optional corroboration: another model's score must also be elevated
+          boolean corroborated = true;
+          if (g.corroborate != null) {
+            corroborated = false;
+            for (def e : g.corroborate.entrySet()) { def v = scores[e.getKey()]; if (v != null && v >= e.getValue()) { corroborated = true; } }
+          }
+          for (def c : r.top_classes) {
+            if (!corroborated || c.class_probability < g.t) { continue; }
+            String k = g.keys.getOrDefault(c.class_name, c.class_name);
+            out.add(k);
+            cats.add(g.name + ':' + k);
+            if (g.flag.contains(k)) { flagged = true; }
+          }
+          if (!out.isEmpty()) { pc[g.name] = out; }
+        } else {
+          // optional risk score: summed probability of all non-benign labels
+          if (g.risk_t != null) {
+            double risk = 0;
+            for (def rc : r.top_classes) { if (!g.benign.contains(g.keys.getOrDefault(rc.class_name, rc.class_name))) { risk += rc.class_probability; } }
+            scores[g.name + '_risk'] = risk;
+            def c0 = r.top_classes[0];
+            boolean topHit = c0.class_probability >= g.t && !g.benign.contains(g.keys.getOrDefault(c0.class_name, c0.class_name));
+            if (g.risk_t > 0 && !topHit && risk >= g.risk_t) { pc[g.name] = 'suspicious'; cats.add(g.name + ':suspicious'); flagged = true; }
+          }
+          def c = r.top_classes[0];
+          String top = g.keys.getOrDefault(c.class_name, c.class_name);
+          if (c.class_probability >= g.t && !g.benign.contains(top)) {
+            String k = g.keys.getOrDefault(c.class_name, c.class_name);
+            pc[g.name] = k;
+            pc[g.name + '_confidence'] = c.class_probability;
+            cats.add(g.name + ':' + k);
+            if (g.flag.contains(k)) { flagged = true; }
+          }
+        }
+      }
+
+      // NER -> entities by type, plus pii:<type> categories
+      Map entities = new HashMap();
+      if (ml.ner?.entities != null) {
+        for (def e : ml.ner.entities) {
+          if (e.class_probability < params.t_entity || params.ner_ignore.contains(e.entity)) { continue; }
+          String k = params.ner_types.getOrDefault(e.class_name, 'misc');
+          if (!entities.containsKey(k)) { entities[k] = new ArrayList(); }
+          if (!entities[k].contains(e.entity)) { entities[k].add(e.entity); }
+        }
+        for (String k : entities.keySet()) {
+          if (k != 'misc') { cats.add('pii:' + k); if (params.pii_flag_types.contains(k)) { flagged = true; } }
+        }
+      }
+
+      pc.categories = cats;
+      pc.scores = scores;
+      if (!entities.isEmpty()) { pc.entities = entities; }
+      pc.flagged = flagged;
+    lang: painless
+    params:
+      zero_shot:
+      - risk_t: 0
+        flag:
+        - malware_exploit_dev
+        - phishing_social_engineering
+        - credential_theft
+        - security_bypass
+        - detection_evasion
+        - reconnaissance
+        - data_exfiltration
+        - privilege_escalation
+        t: 0.93
+        keys:
+          malware or exploit development: malware_exploit_dev
+          network scanning or reconnaissance: reconnaissance
+          defensive security or detection engineering: defensive_security
+          stealing or cracking credentials: credential_theft
+          phishing or social engineering: phishing_social_engineering
+          bypassing security controls: security_bypass
+          normal software or IT work: normal_work
+          data exfiltration: data_exfiltration
+          evading antivirus or detection: detection_evasion
+          privilege escalation: privilege_escalation
+          casual conversation: casual_conversation
+        name: security
+        benign:
+        - normal_work
+        - casual_conversation
+        - defensive_security
+        multi: false
+      - flag:
+        - destructive
+        - disable_security_tooling
+        - access_change
+        t: 0.6
+        keys:
+          deploying or pushing code: deploy
+          asking a question or reading information: read_only
+          changing production systems: production_change
+          deleting or dropping data, indices, files or infrastructure: destructive
+          disabling logging, monitoring or security tools: disable_security_tooling
+          changing access permissions or user accounts: access_change
+          writing or editing code: edit_code
+          casual conversation: casual_conversation
+        name: agent_action
+        benign:
+        - read_only
+        - edit_code
+        - casual_conversation
+        multi: false
+      - flag: []
+        t: 0.3
+        keys:
+          a request to fix a bug or error: fix_bug
+          a request to refactor or improve code: refactor
+          a request to write non-technical text such as emails or reports: non_technical_writing
+          feedback on a previous answer: feedback
+          a request to write tests: write_tests
+          a request for infrastructure, DevOps or configuration work: infra_devops
+          a general knowledge question: general_question
+          a request to review code: review_code
+          a request to write documentation: documentation
+          a request to write new code: write_code
+          a request to explain or understand code: explain_code
+          a request to query or analyze data: data_analysis
+          a request to plan or design a system: design_planning
+        name: task
+        benign:
+        - feedback
+        multi: false
+      - flag: []
+        t: 0.85
+        keys:
+          thanks or praise: satisfaction
+          a question about Claude itself: assistant_usage
+          a complaint that something is wrong: correction
+          an instruction or task request: instruction
+        name: interaction
+        benign:
+        - instruction
+        multi: false
+      - flag:
+        - violence
+        - self_harm
+        - sexual_content
+        - hate_speech
+        - harassment
+        - illegal_activity
+        - weapons
+        t: 0.95
+        keys:
+          illegal activity: illegal_activity
+          self-harm: self_harm
+          hate speech: hate_speech
+          harassment: harassment
+          weapons: weapons
+          sexual content: sexual_content
+          violence: violence
+        name: moderation
+        benign: []
+        corroborate:
+          offensive: 0.35
+          toxic: 0.1
+        multi: true
+      ner_ignore:
+      - Claude
+      - Anthropic
+      - Claude Code
+      binary:
+      - name: injection
+        label: INJECTION
+        agree: true
+        category: prompt_injection
+        t: 0.9
+      - name: jailbreak
+        label: jailbreak
+        agree: true
+        category: jailbreak
+        t: 0.99
+      - name: toxicity
+        label: toxic
+        category: toxic
+        t: 0.7
+      - name: offensive
+        label: offensive
+        category: offensive
+        t: 0.8
+      t_entity: 0.8
+      ner_types:
+        MISC: misc
+        LOC: location
+        PER: person
+        ORG: organization
+      pii_flag_types:
+      - person
+- script:
+    description: Surface transcript-level secret findings (claude_code.secrets) in the prompt classification
+    tag: secrets
+    source: |
+      def s = ctx.claude_code.secrets;
+      def pc = ctx.claude_code.prompt_classification;
+      if (pc == null) { pc = new HashMap(); ctx.claude_code.prompt_classification = pc; }
+      Map copy = new HashMap(); copy.put('count', s.count); copy.put('types', s.types); copy.put('findings', s.findings);
+      pc.secrets = copy;
+      if (pc.categories == null) { pc.categories = new ArrayList(); }
+      for (def t : s.types) { pc.categories.add('secret:' + t); }
+      pc.flagged = true;
+    lang: painless
+    if: ctx.claude_code?.secrets?.types != null
+- remove:
+    field: _ml
+    ignore_missing: true
+    tag: remove_ml
+on_failure:
+- append:
+    tag: append_error_message_on_failure
+    field: error.message
+    value: Processor '{{{ _ingest.on_failure_processor_type }}}' {{{#_ingest.on_failure_processor_tag}}}with tag '{{{ _ingest.on_failure_processor_tag }}}' {{{/_ingest.on_failure_processor_tag}}}in pipeline '{{{ _ingest.pipeline }}}' failed with message '{{{ _ingest.on_failure_message }}}'
+- set:
+    tag: set_event_kind_pipeline_error
+    field: event.kind
+    value: pipeline_error
+- remove:
+    field: _ml
+    ignore_missing: true
+    tag: remove_temp_fields_on_failure
