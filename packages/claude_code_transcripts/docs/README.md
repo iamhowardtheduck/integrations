@@ -11,13 +11,13 @@ Collects **Claude Code session transcripts** and **Claude Desktop app/MCP logs**
 | `inference_stats` | `claude_code_transcripts.inference_stats` | Optional: Elasticsearch trained-model and ingest-pipeline statistics (CEL input) for the ML Inference Admin dashboard |
 
 ### Transcripts
-One document per conversation line. `event.action` is one of `user-prompt`, `assistant-response`, `tool-use`, `tool-result`, `assistant-thinking`, `subagent-prompt`, `local-command`, `system-notification`; `claude_code.human_prompt: true` marks what a person actually typed.
+One document per conversation line. `event.action` is one of `user-prompt`, `assistant-response`, `tool-use`, `tool-result`, `assistant-thinking`, `subagent-prompt`, `local-command`, `system-notification`. `claude_code.human_prompt: true` marks what a person actually typed.
 
 - ECS: `@timestamp`, `event.id` (also `_id`, so resumed sessions do not duplicate lines), `message`, `user.name`, `related.user`, `process.working_directory`, `service.name/version`.
 - `gen_ai.*` (ECS + OpenTelemetry GenAI names): `provider.name`/`system`, `conversation.id`, `operation.name`, `request.model`, `response.model/id/finish_reasons`, `tool.name`, `tool.call.id`, `usage.input_tokens` (**includes cached tokens**, per OTel), `usage.output_tokens`, `usage.cache_read.input_tokens`, `usage.cache_creation.input_tokens`.
   For cost, use Anthropic's raw split under `claude_code.message.usage.*` (uncached `input_tokens`, cache reads and cache writes are priced differently).
 - One assistant turn can span several lines sharing `gen_ai.response.id`, each repeating usage: deduplicate on it before summing tokens.
-- Secrets (cloud keys, tokens, private keys, passwords, credentials in URLs, ...) are replaced with `[REDACTED:<type>]` in `message`, `claude_code.message.content` and tool inputs; `claude_code.secrets.*` records type and length only.
+- Secrets (cloud keys, tokens, private keys, passwords, credentials in URLs and more) are replaced with `[REDACTED:<type>]` in `message`, `claude_code.message.content` and tool inputs. `claude_code.secrets.*` records only their type and length.
 - Tool inputs are extracted into `claude_code.tool_input.{command,file_path,url,skill,description}`.
 
 ### Desktop logs
@@ -37,7 +37,7 @@ The **Enable ML inference** switch on the transcript stream turns on, for human 
 
 3. **Semantic threat flags** (with embedding alone): cosine similarity to 29 threat phrases in 10 concepts goes into `claude_code.prompt_classification.semantic.*`; a score of 0.60 or more adds `security:semantic_<concept>` and `flagged: true`.
 
-Timing is recorded in `claude_code.inference.{total_ms,embedding_ms,classify_ms,steps.*}`. Inference failures never block indexing; they are recorded in `claude_code.prompt_embedding_error` and `claude_code.prompt_classification.errors`.
+Timing is recorded in `claude_code.inference.{total_ms,embedding_ms,classify_ms,steps.*}`. Inference failures never block indexing. They are recorded in `claude_code.prompt_embedding_error` and `claude_code.prompt_classification.errors`.
 
 Before enabling it:
 - **Embedding (Enable ML inference):** add the vector mapping (step 4 below) and check the embedding endpoint (step 5).
@@ -45,7 +45,7 @@ Before enabling it:
 
 ## Loading the inference models
 
-> **IMPORTANT:** Run these commands if you enable inference for classification (the **Prompt classification** switch). The six NLP models must be imported and started **before** you turn it on. Otherwise prompts are still indexed, but each one records a classification error and no categories.
+> **IMPORTANT:** Run these commands if you enable inference for classification (the Prompt classification switch). The six NLP models must be imported and started before you turn it on. Otherwise prompts are still indexed, but each one records a classification error and no categories.
 >
 > **NOTE:** Embedding-only inference (**Enable ML inference** on, **Prompt classification** off) needs only steps 4 and 5.
 
@@ -57,7 +57,7 @@ Before enabling it:
 
 The Elasticsearch model IDs below **must be used exactly as shown**, because the ingest pipeline calls the models by these IDs. Do not add `--quantize`.
 
-### Step 1: set the connection variables
+### Step 1: Set the connection variables
 
 Run **one** of these in the shell where you will run the import commands.
 
@@ -74,7 +74,7 @@ export CLOUD_ID=<Cloud ID from the deployment page>
 export ES_API_KEY=<base64-encoded API key>
 ```
 
-### Step 2: import the six models with Eland
+### Step 2: Import the six models with Eland
 
 Each command downloads one model from Hugging Face (400–750 MB) and uploads it to Elasticsearch, which takes a few minutes per model.
 
@@ -120,7 +120,7 @@ docker run --rm -e CLOUD_ID -e ES_API_KEY docker.elastic.co/eland/eland:latest e
 
 Without Docker, install Eland with `python3 -m pip install 'eland[pytorch]'`. Run the same `eland_import_hub_model ...` part of each command, adding `--ca-certs "$CA_CERT"` on-premises; Eland reads `ES_URL`, `CLOUD_ID` and `ES_API_KEY` from the environment.
 
-### Step 3: start the models
+### Step 3: Start the models
 
 Run these in **Kibana → Dev Tools**. The zero-shot model (`cross-encoder__nli-deberta-v3-base-128`) does most of the work, five passes per prompt, so it gets the most allocations. Plan on about one allocation per 290 prompts per hour.
 
@@ -202,7 +202,7 @@ POST _ml/trained_models/dslim__bert-base-ner/_infer
 {"docs": [{"text_field": "Send the report to Maria Lopez at Contoso in Berlin"}]}
 ```
 
-### Step 4: add the vector mapping (needed for any inference)
+### Step 4: Add the vector mapping (needed for any inference)
 
 Integration packages cannot declare `dense_vector` fields, so add the prompt-embedding mapping once in **Dev Tools**.
 
@@ -218,7 +218,7 @@ PUT logs-claude_code_transcripts.transcript-*/_mapping
 {"properties": {"claude_code": {"properties": {"prompt_embedding": {"type": "dense_vector", "dims": 768, "similarity": "cosine", "index_options": {"type": "bbq_hnsw"}}}}}}
 ```
 
-### Step 5: check the embedding endpoint
+### Step 5: Check the embedding endpoint
 
 ```
 POST _inference/text_embedding/.jina-embeddings-v5-text-nano
@@ -228,7 +228,7 @@ It must return a 768-number embedding.
 - **Elastic Cloud:** the endpoint is available by default.
 - **On-premises:** it needs the cluster connected to the Elastic Inference Service via Cloud Connect (Elastic Stack 9.3+).
 
-### Step 6: turn inference on
+### Step 6: Turn inference on
 
 Go to **Fleet → Agent policies → (policy) → Claude Code Transcripts → Edit integration → Claude Code session transcripts**:
 - **Enable ML inference:** on.

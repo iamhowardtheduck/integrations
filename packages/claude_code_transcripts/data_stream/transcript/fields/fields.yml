@@ -403,7 +403,7 @@
       type: float
     - name: semantic
       type: group
-      description: Ingest-time semantic threat match (prompt embedding vs tools/semantic-concepts.json)
+      description: Ingest-time semantic threat match (prompt embedding compared with the threat phrases in tools/semantic-concepts.json)
       fields:
       - name: score
         type: float

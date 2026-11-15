@@ -81,7 +81,7 @@ streams:
   - name: custom
     type: yaml
     title: Custom configurations
-    description: Extra filestream options, e.g. `take_over` when migrating from another filestream input (see the repository README).
+    description: Extra filestream options, for example `take_over` when migrating from another filestream input (see the repository README).
     multi: false
     required: false
     show_user: false
