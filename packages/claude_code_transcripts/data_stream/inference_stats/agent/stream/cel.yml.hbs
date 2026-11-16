@@ -23,7 +23,9 @@ program: |
         state.with({
           "events": (
             has(mb.trained_model_stats) ?
-              mb.trained_model_stats.filter(t, has(t.deployment_stats)).map(t, {"kind": "deployment", "raw": t.deployment_stats})
+              mb.trained_model_stats.filter(t, has(t.deployment_stats)).map(t,
+                (type(t.deployment_stats) == list ? t.deployment_stats : [t.deployment_stats]).map(d, {"kind": "deployment", "raw": d})
+              ).flatten()
             : []
           ) + (
             has(pb.nodes) ?
@@ -40,7 +42,9 @@ program: |
         "events": [{
           "error": {
             "code": string(mresp.StatusCode) + "/" + string(presp.StatusCode),
-            "message": "Elasticsearch stats request failed: " + string(mresp.Body).substring(0, 200) + " | " + string(presp.Body).substring(0, 200)
+            "message": "Elasticsearch stats request failed: " +
+              string(mresp.Body).as(b, b.size() > 200 ? b.substring(0, 200) : b) + " | " +
+              string(presp.Body).as(b, b.size() > 200 ? b.substring(0, 200) : b)
           }
         }]
       })
