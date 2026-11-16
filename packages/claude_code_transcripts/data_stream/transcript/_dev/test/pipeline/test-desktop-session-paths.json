@@ -1,0 +1,44 @@
+{
+    "events": [
+        {
+            "log": {
+                "file": {
+                    "path": "C:\\Users\\dana\\AppData\\Roaming\\Claude\\claude-code-sessions\\0a1b2c3d\\4e5f6a7b\\local_8c9d0e1f.jsonl"
+                }
+            },
+            "claude_code": {
+                "type": "user",
+                "uuid": "11111111-0000-4000-8000-000000000040",
+                "sessionId": "3f1c2b7e-0000-4000-8000-000000000001",
+                "timestamp": "2026-11-14T10:00:00.000Z",
+                "cwd": "/home/alice/shop",
+                "version": "2.1.0",
+                "isSidechain": false,
+                "message": {
+                    "role": "user",
+                    "content": "summarise the open pull requests"
+                }
+            }
+        },
+        {
+            "log": {
+                "file": {
+                    "path": "/Users/erin/Library/Application Support/Claude/local-agent-mode-sessions/0a1b2c3d/4e5f6a7b/local_8c9d0e1f.jsonl"
+                }
+            },
+            "claude_code": {
+                "type": "user",
+                "uuid": "11111111-0000-4000-8000-000000000041",
+                "sessionId": "3f1c2b7e-0000-4000-8000-000000000001",
+                "timestamp": "2026-11-14T10:00:00.000Z",
+                "cwd": "/home/alice/shop",
+                "version": "2.1.0",
+                "isSidechain": false,
+                "message": {
+                    "role": "user",
+                    "content": "summarise the open pull requests"
+                }
+            }
+        }
+    ]
+}

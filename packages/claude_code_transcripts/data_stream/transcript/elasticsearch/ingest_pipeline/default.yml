@@ -75,7 +75,9 @@ processors:
     patterns:
     - (?i)%{SEP}(?:Users|home)%{SEP}%{SEG:user.name}%{SEP}(?:.*?%{SEP})?\.claude%{SEP}projects%{SEP}%{SEG:claude_code.project_slug}%{SEP}
     - ^/%{ROOTUSER:user.name}/\.claude/projects/%{SEG:claude_code.project_slug}/
-    description: User and project from the file path (Windows, Linux, macOS; Claude Code and Cowork layouts)
+    - (?i)%{SEP}(?:Users|home)%{SEP}%{SEG:user.name}%{SEP}
+    - ^/%{ROOTUSER:user.name}/
+    description: User and project from the file path (Windows, Linux, macOS; Claude Code and Cowork layouts). Desktop session files outside .claude/projects (claude-code-sessions, local-agent-mode-sessions) give the user only.
     ignore_missing: true
     pattern_definitions:
       SEG: '[^\\/]+'
