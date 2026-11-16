@@ -1,0 +1,5 @@
+fields:
+  data_stream:
+    type: metrics
+    dataset: claude_code_transcripts.inference_stats
+    namespace: default

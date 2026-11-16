@@ -1,0 +1,84 @@
+---
+description: Flatten trained-model deployment and ingest-pipeline statistics polled by the CEL input
+processors:
+- set:
+    field: ecs.version
+    value: 9.3.0
+    tag: set_ecs_version
+- script:
+    tag: flatten
+    source: |
+      Map out = new HashMap();
+      String kind = ctx.kind;
+      def r = ctx.raw;
+      if (r instanceof String) { r = null; }
+      if (kind == 'deployment' && r instanceof Map) {
+        Map d = new HashMap();
+        d.id = r.deployment_id; d.model_id = r.model_id; d.state = r.state; d.priority = r.priority;
+        d.allocations = r.number_of_allocations; d.threads_per_allocation = r.threads_per_allocation; d.queue_capacity = r.queue_capacity;
+        d.peak_throughput_per_minute = r.peak_throughput_per_minute;
+        if (r.allocation_status instanceof Map) { d.allocation_state = r.allocation_status.state; d.target_allocations = r.allocation_status.target_allocation_count; }
+        if (r.adaptive_allocations instanceof Map) { d.adaptive_enabled = r.adaptive_allocations.enabled; d.adaptive_min = r.adaptive_allocations.min_number_of_allocations; d.adaptive_max = r.adaptive_allocations.max_number_of_allocations; } else { d.adaptive_enabled = false; }
+        long pending = 0, tpm = 0, chlm = 0, cnt = 0, ch = 0, err = 0, rej = 0, tout = 0; double wsum = 0, wsumx = 0;
+        List nodes = new ArrayList(); List rs = new ArrayList();
+        if (r.nodes instanceof List) {
+          for (def n : r.nodes) {
+            if (n.node instanceof Map) { for (def v : n.node.values()) { nodes.add(v.name); } }
+            if (n.routing_state instanceof Map) { rs.add(n.routing_state.routing_state); }
+            long c = n.inference_count == null ? 0 : n.inference_count; long h = n.inference_cache_hit_count == null ? 0 : n.inference_cache_hit_count;
+            cnt += c; ch += h;
+            pending += n.number_of_pending_requests == null ? 0 : n.number_of_pending_requests;
+            tpm += n.throughput_last_minute == null ? 0 : n.throughput_last_minute;
+            chlm += n.inference_cache_hit_count_last_minute == null ? 0 : n.inference_cache_hit_count_last_minute;
+            err += n.error_count == null ? 0 : n.error_count; rej += n.rejected_execution_count == null ? 0 : n.rejected_execution_count; tout += n.timeout_count == null ? 0 : n.timeout_count;
+            if (n.average_inference_time_ms != null) { wsum += n.average_inference_time_ms * c; }
+            if (n.average_inference_time_ms_excluding_cache_hits != null) { wsumx += n.average_inference_time_ms_excluding_cache_hits * (c - h); }
+          }
+        }
+        d.nodes = nodes; d.routing_states = rs;
+        d.pending_requests = pending; d.throughput_last_minute = tpm; d.cache_hits_last_minute = chlm;
+        d.inference_count = cnt; d.cache_hit_count = ch; d.error_count = err; d.rejected_execution_count = rej; d.timeout_count = tout;
+        if (cnt > 0) { d.avg_inference_ms = wsum / cnt; }
+        if (cnt - ch > 0) { d.avg_inference_ms_excl_cache = wsumx / (cnt - ch); }
+        long alloc = r.number_of_allocations == null ? 0 : r.number_of_allocations;
+        if (alloc > 0) {
+          d.pending_per_allocation = pending / (double) alloc;
+          if (d.avg_inference_ms_excl_cache != null) { d.est_utilization = Math.min(5.0, (tpm - chlm) * d.avg_inference_ms_excl_cache / (60000.0 * alloc)); }
+        }
+        if (r.queue_capacity != null && r.queue_capacity > 0) { d.queue_fill = pending / (double) r.queue_capacity; }
+        out.deployment = d;
+      } else if (kind == 'pipeline' && r instanceof Map) {
+        Map p = new HashMap(); p.name = ctx.pipeline_name;
+        long count = 0, failed = 0, current = 0, t = 0, active = 0;
+        if (r.nodes instanceof Map) {
+          for (def n : r.nodes.values()) {
+            if (n.ingest == null || n.ingest.pipelines == null) continue;
+            def s = n.ingest.pipelines[ctx.pipeline_name];
+            if (s == null) continue;
+            count += s.count; failed += s.failed; current += s.current; t += s.time_in_millis;
+            if (s.count > 0) { active++; }
+          }
+        }
+        p.count = count; p.failed = failed; p.current = current; p.time_in_millis = t; p.nodes_active = active;
+        out.pipeline = p;
+      }
+      out.kind = kind;
+      if (ctx.execution_id != null) { out.collector = ['execution_id': ctx.execution_id]; }
+      ctx.ml_inference = out;
+- remove:
+    field:
+    - raw
+    - kind
+    - pipeline_name
+    - execution_id
+    ignore_missing: true
+    tag: remove_raw
+on_failure:
+- append:
+    tag: append_error_message_on_failure
+    field: error.message
+    value: Processor '{{{ _ingest.on_failure_processor_type }}}' {{{#_ingest.on_failure_processor_tag}}}with tag '{{{ _ingest.on_failure_processor_tag }}}' {{{/_ingest.on_failure_processor_tag}}}in pipeline '{{{ _ingest.pipeline }}}' failed with message '{{{ _ingest.on_failure_message }}}'
+- set:
+    tag: set_event_kind_pipeline_error
+    field: event.kind
+    value: pipeline_error

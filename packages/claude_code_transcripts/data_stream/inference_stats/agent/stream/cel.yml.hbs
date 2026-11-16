@@ -1,0 +1,53 @@
+config_version: 2
+interval: {{interval}}
+resource.url: {{url}}
+{{#if ssl}}
+resource.ssl: {{ssl}}
+{{/if}}
+state:
+  url: {{url}}
+  api_key: {{api_key}}
+  pipeline_prefix: {{pipeline_prefix}}
+redact:
+  fields:
+    - api_key
+program: |
+  get_request(state.url.trim_right("/") + "/_ml/trained_models/_stats?filter_path=trained_model_stats.model_id,trained_model_stats.deployment_stats").with({
+    "Header": {"Authorization": ["ApiKey " + state.api_key]}
+  }).do_request().as(mresp,
+  get_request(state.url.trim_right("/") + "/_nodes/stats/ingest?filter_path=nodes.*.name,nodes.*.ingest.pipelines." + state.pipeline_prefix + "*").with({
+    "Header": {"Authorization": ["ApiKey " + state.api_key]}
+  }).do_request().as(presp,
+    (mresp.StatusCode == 200 && presp.StatusCode == 200) ?
+      bytes(mresp.Body).decode_json().as(mb, bytes(presp.Body).decode_json().as(pb,
+        state.with({
+          "events": (
+            has(mb.trained_model_stats) ?
+              mb.trained_model_stats.filter(t, has(t.deployment_stats)).map(t, {"kind": "deployment", "raw": t.deployment_stats})
+            : []
+          ) + (
+            has(pb.nodes) ?
+              zip(
+                pb.nodes.map(n, has(pb.nodes[n].ingest) && has(pb.nodes[n].ingest.pipelines) ? pb.nodes[n].ingest.pipelines.map(k, k) : []).flatten(),
+                pb.nodes.map(n, has(pb.nodes[n].ingest) && has(pb.nodes[n].ingest.pipelines) ? pb.nodes[n].ingest.pipelines.map(k, k) : []).flatten()
+              ).map(name, {"kind": "pipeline", "pipeline_name": name, "raw": pb})
+            : []
+          )
+        })
+      ))
+    :
+      state.with({
+        "events": [{
+          "error": {
+            "code": string(mresp.StatusCode) + "/" + string(presp.StatusCode),
+            "message": "Elasticsearch stats request failed: " + string(mresp.Body).substring(0, 200) + " | " + string(presp.Body).substring(0, 200)
+          }
+        }]
+      })
+  ))
+{{#if tags}}
+tags:
+{{#each tags as |tag|}}
+  - {{tag}}
+{{/each}}
+{{/if}}

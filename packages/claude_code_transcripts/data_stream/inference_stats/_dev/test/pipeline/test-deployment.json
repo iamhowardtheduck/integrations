@@ -1,0 +1,73 @@
+{
+    "events": [
+        {
+            "kind": "deployment",
+            "raw": {
+                "node-id-01xxxxxxxxxxxx": {
+                    "enabled": true,
+                    "max_number_of_allocations": 3,
+                    "min_number_of_allocations": 1
+                },
+                "allocation_status": {
+                    "allocation_count": 1,
+                    "state": "fully_allocated",
+                    "target_allocation_count": 1
+                },
+                "cache_size": "475.5mb",
+                "deployment_id": "cardiffnlp__twitter-roberta-base-offensive",
+                "inference_count": 3340,
+                "model_id": "cardiffnlp__twitter-roberta-base-offensive",
+                "nodes": [
+                    {
+                        "average_inference_process_memory_rss_bytes": 0,
+                        "average_inference_time_ms": 124.162874251497,
+                        "average_inference_time_ms_excluding_cache_hits": 1092.2225201072386,
+                        "inference_cache_hit_count": 2967,
+                        "inference_cache_hit_count_last_minute": 0,
+                        "inference_count": 3340,
+                        "last_access": 1794706497130,
+                        "node": {
+                            "node-id-02xxxxxxxxxxxx": {
+                                "attributes": {
+                                    "ml.allocated_processors": "24",
+                                    "ml.allocated_processors_double": "24.0",
+                                    "ml.config_version": "12.0.0",
+                                    "ml.machine_memory": "107374182400",
+                                    "ml.max_jvm_size": "8589934592"
+                                },
+                                "ephemeral_id": "ephemeral-node-id-",
+                                "external_id": "es-node-01",
+                                "max_index_version": 9111002,
+                                "min_index_version": 8000099,
+                                "name": "es-node-01",
+                                "roles": [
+                                    "ml",
+                                    "remote_cluster_client",
+                                    "transform"
+                                ],
+                                "transport_address": "192.0.2.10:9300",
+                                "version": "9.5.6"
+                            }
+                        },
+                        "number_of_allocations": 1,
+                        "number_of_pending_requests": 0,
+                        "peak_throughput_per_minute": 282,
+                        "routing_state": {
+                            "routing_state": "started"
+                        },
+                        "start_time": 1794671712931,
+                        "threads_per_allocation": 1,
+                        "throughput_last_minute": 0
+                    }
+                ],
+                "number_of_allocations": 1,
+                "peak_throughput_per_minute": 282,
+                "priority": "normal",
+                "queue_capacity": 10000,
+                "start_time": 1794671711214,
+                "state": "started",
+                "threads_per_allocation": 1
+            }
+        }
+    ]
+}
