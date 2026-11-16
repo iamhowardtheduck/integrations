@@ -1,0 +1,45 @@
+paths:
+{{#each paths as |path|}}
+  - {{path}}
+{{/each}}
+{{#if exclude_files}}
+exclude_files:
+{{#each exclude_files as |pattern|}}
+  - '{{pattern}}'
+{{/each}}
+{{/if}}
+prospector.scanner.recursive_glob: true
+parsers:
+  - ndjson:
+      target: claude_code
+      add_error_key: true
+      overwrite_keys: false
+message_max_bytes: {{message_max_bytes}}
+ignore_older: {{ignore_older}}
+close.on_state_change.inactive: 10m
+prospector.scanner.fingerprint.enabled: true
+tags:
+{{#if enable_inference}}
+  - claude_code_embed
+{{#if inference_classification}}
+  - claude_code_classify
+{{/if}}
+{{/if}}
+{{#each tags as |tag|}}
+  - {{tag}}
+{{/each}}
+processors:
+  - drop_event:
+      when:
+        and:
+          - has_fields: ["claude_code.type"]
+          - not:
+              or:
+                - equals: { claude_code.type: "user" }
+                - equals: { claude_code.type: "assistant" }
+{{#if processors}}
+{{processors}}
+{{/if}}
+{{#if custom}}
+{{custom}}
+{{/if}}

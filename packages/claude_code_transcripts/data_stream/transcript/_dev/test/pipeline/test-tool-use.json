@@ -1,0 +1,44 @@
+{
+    "events": [
+        {
+            "log": {
+                "file": {
+                    "path": "C:\\Users\\bob\\.claude\\projects\\C--src-api\\3f1c2b7e-0000-4000-8000-000000000002.jsonl"
+                }
+            },
+            "claude_code": {
+                "type": "assistant",
+                "uuid": "11111111-0000-4000-8000-000000000002",
+                "sessionId": "3f1c2b7e-0000-4000-8000-000000000002",
+                "timestamp": "2026-11-14T10:00:05.000Z",
+                "cwd": "C:\\src\\api",
+                "version": "2.1.0",
+                "requestId": "req_011",
+                "requestedModel": "claude-sonnet-5-5",
+                "message": {
+                    "id": "msg_011",
+                    "role": "assistant",
+                    "model": "claude-sonnet-5-5",
+                    "stop_reason": "tool_use",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "toolu_01",
+                            "name": "Bash",
+                            "input": {
+                                "command": "git status",
+                                "description": "Show working tree status"
+                            }
+                        }
+                    ],
+                    "usage": {
+                        "input_tokens": 3,
+                        "output_tokens": 40,
+                        "cache_read_input_tokens": 12000,
+                        "cache_creation_input_tokens": 500
+                    }
+                }
+            }
+        }
+    ]
+}

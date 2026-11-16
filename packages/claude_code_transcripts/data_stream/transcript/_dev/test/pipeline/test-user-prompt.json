@@ -1,0 +1,24 @@
+{
+    "events": [
+        {
+            "log": {
+                "file": {
+                    "path": "/home/alice/.claude/projects/-home-alice-shop/3f1c2b7e-0000-4000-8000-000000000001.jsonl"
+                }
+            },
+            "claude_code": {
+                "type": "user",
+                "uuid": "11111111-0000-4000-8000-000000000001",
+                "sessionId": "3f1c2b7e-0000-4000-8000-000000000001",
+                "timestamp": "2026-11-14T10:00:00.000Z",
+                "cwd": "/home/alice/shop",
+                "version": "2.1.0",
+                "isSidechain": false,
+                "message": {
+                    "role": "user",
+                    "content": "add a retry to the payment client; the staging db password is Sup3rS3cret!42"
+                }
+            }
+        }
+    ]
+}

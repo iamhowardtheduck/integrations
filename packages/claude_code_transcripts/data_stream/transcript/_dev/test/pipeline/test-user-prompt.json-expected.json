@@ -1,0 +1,85 @@
+{
+    "expected": [
+        {
+            "@timestamp": "2026-11-14T10:00:00.000Z",
+            "claude_code": {
+                "cwd": "/home/alice/shop",
+                "human_prompt": true,
+                "isSidechain": false,
+                "message": {
+                    "content": [
+                        {
+                            "text": "add a retry to the payment client; the staging db password is [REDACTED:password]",
+                            "type": "text"
+                        }
+                    ],
+                    "role": "user"
+                },
+                "project_slug": "-home-alice-shop",
+                "secrets": {
+                    "count": 1,
+                    "findings": [
+                        {
+                            "length": 14,
+                            "type": "password"
+                        }
+                    ],
+                    "redacted": true,
+                    "types": [
+                        "password"
+                    ]
+                },
+                "sessionId": "3f1c2b7e-0000-4000-8000-000000000001",
+                "type": "user",
+                "uuid": "11111111-0000-4000-8000-000000000001",
+                "version": "2.1.0"
+            },
+            "data_stream": {
+                "dataset": "claude_code_transcripts.transcript",
+                "namespace": "default",
+                "type": "logs"
+            },
+            "ecs": {
+                "version": "9.3.0"
+            },
+            "event": {
+                "action": "user-prompt",
+                "id": "11111111-0000-4000-8000-000000000001",
+                "kind": "event"
+            },
+            "gen_ai": {
+                "conversation": {
+                    "id": "3f1c2b7e-0000-4000-8000-000000000001"
+                },
+                "operation": {
+                    "name": "chat"
+                },
+                "provider": {
+                    "name": "anthropic"
+                },
+                "system": "anthropic"
+            },
+            "log": {
+                "file": {
+                    "path": "/home/alice/.claude/projects/-home-alice-shop/3f1c2b7e-0000-4000-8000-000000000001.jsonl"
+                }
+            },
+            "message": "add a retry to the payment client; the staging db password is [REDACTED:password]",
+            "process": {
+                "working_directory": "/home/alice/shop"
+            },
+            "related": {
+                "user": [
+                    "alice"
+                ]
+            },
+            "service": {
+                "name": "claude-code",
+                "version": "2.1.0"
+            },
+            "user": {
+                "name": "alice"
+            }
+        }
+    ]
+}

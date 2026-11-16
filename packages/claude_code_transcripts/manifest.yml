@@ -1,8 +1,8 @@
 format_version: 3.6.0
 name: claude_code_transcripts
 title: Claude Code Transcripts
-version: 0.1.0
-description: Collect Claude Desktop app/MCP logs from disk with Elastic Agent, mapped to ECS and gen_ai.*, with secret redaction.
+version: 0.2.0
+description: Collect Claude Code session transcripts and Claude Desktop app/MCP logs from disk with Elastic Agent, mapped to ECS and gen_ai.*, with secret redaction and optional ML inference on prompts.
 type: integration
 categories:
 - security
@@ -17,14 +17,23 @@ icons:
   title: Claude Code Transcripts
   size: 64x64
   type: image/svg+xml
+screenshots:
+- src: /img/dashboard-business-analytics.png
+  title: Business Analytics dashboard
+  size: 1600x1800
+  type: image/png
+- src: /img/dashboard-security.png
+  title: Security dashboard
+  size: 1600x2164
+  type: image/png
 policy_templates:
 - name: claude_code
   title: Claude Code and Claude Desktop
-  description: Claude Desktop app and MCP logs
+  description: Claude Code transcripts (~/.claude/projects) and Claude Desktop logs
   inputs:
   - type: filestream
-    title: Collect Claude Desktop logs
-    description: Tail the Desktop app/MCP log files
+    title: Collect Claude Code transcripts and Claude Desktop logs
+    description: Tail the JSONL transcripts and the Desktop app/MCP log files
 owner:
   github: elastic/security-service-integrations
   type: community

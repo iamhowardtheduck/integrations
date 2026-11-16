@@ -1,3 +1,8 @@
+- version: 0.2.0
+  changes:
+  - description: 'Add the transcript data stream (Claude Code session transcripts, secret redaction, optional ML inference) and the Business Analytics and Security dashboards.'
+    type: enhancement
+    link: https://github.com/elastic/integrations/pull/22450
 - version: 0.1.0
   changes:
   - description: 'Initial release: Claude Desktop logs.'

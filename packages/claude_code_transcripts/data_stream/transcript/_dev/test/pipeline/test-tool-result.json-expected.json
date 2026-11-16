@@ -1,0 +1,83 @@
+{
+    "expected": [
+        {
+            "@timestamp": "2026-11-14T10:00:07.000Z",
+            "claude_code": {
+                "cwd": "/Users/carol/web",
+                "human_prompt": false,
+                "message": {
+                    "content": [
+                        {
+                            "content": [
+                                {
+                                    "text": "On branch main\nnothing to commit",
+                                    "type": "text"
+                                }
+                            ],
+                            "tool_use_id": "toolu_01",
+                            "type": "tool_result"
+                        }
+                    ],
+                    "role": "user"
+                },
+                "project_slug": "-Users-carol-web",
+                "sessionId": "3f1c2b7e-0000-4000-8000-000000000003",
+                "type": "user",
+                "uuid": "11111111-0000-4000-8000-000000000003",
+                "version": "2.1.0"
+            },
+            "data_stream": {
+                "dataset": "claude_code_transcripts.transcript",
+                "namespace": "default",
+                "type": "logs"
+            },
+            "ecs": {
+                "version": "9.3.0"
+            },
+            "event": {
+                "action": "tool-result",
+                "id": "11111111-0000-4000-8000-000000000003",
+                "kind": "event"
+            },
+            "gen_ai": {
+                "conversation": {
+                    "id": "3f1c2b7e-0000-4000-8000-000000000003"
+                },
+                "operation": {
+                    "name": "execute_tool"
+                },
+                "provider": {
+                    "name": "anthropic"
+                },
+                "system": "anthropic",
+                "tool": {
+                    "call": {
+                        "id": [
+                            "toolu_01"
+                        ]
+                    }
+                }
+            },
+            "log": {
+                "file": {
+                    "path": "/Users/carol/.claude/projects/-Users-carol-web/3f1c2b7e-0000-4000-8000-000000000003.jsonl"
+                }
+            },
+            "process": {
+                "working_directory": "/Users/carol/web"
+            },
+            "related": {
+                "user": [
+                    "carol"
+                ]
+            },
+            "service": {
+                "name": "claude-code",
+                "version": "2.1.0"
+            },
+            "user": {
+                "name": "carol"
+            }
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+    "events": [
+        {
+            "log": {
+                "file": {
+                    "path": "/Users/carol/.claude/projects/-Users-carol-web/3f1c2b7e-0000-4000-8000-000000000003.jsonl"
+                }
+            },
+            "claude_code": {
+                "type": "user",
+                "uuid": "11111111-0000-4000-8000-000000000003",
+                "sessionId": "3f1c2b7e-0000-4000-8000-000000000003",
+                "timestamp": "2026-11-14T10:00:07.000Z",
+                "cwd": "/Users/carol/web",
+                "version": "2.1.0",
+                "message": {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": "toolu_01",
+                            "content": "On branch main\nnothing to commit"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
