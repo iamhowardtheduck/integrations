@@ -37,6 +37,7 @@ The Claude Code Transcripts integration collects log messages of the following t
 
 - Usage and cost analytics: activity by user and project, models, token usage, and estimated spend, on the **[Claude Code Transcripts] Business Analytics** dashboard.
 - Security monitoring: risky commands, secrets, file and network access, and blocked actions on the **[Claude Code Transcripts] Security** dashboard. With ML inference, also prompt injection, jailbreaks, risky agent actions, personal data and semantic threat search.
+- Entity Analytics: alerts from the companion detection rules keep `user.name` and `host.name`, so they add to user and host risk scores. See [Detection rules and Entity Analytics](#detection-rules-and-entity-analytics).
 - Tool auditing: which tools and MCP servers are used, on which hosts and by which users.
 - Secret exposure: `claude_code.secrets.types` and `claude_desktop.secrets.types` show which kinds of credentials appeared, without storing them.
 - Troubleshooting: MCP server crashes, failed responses and Claude Desktop errors, by host and by server.
@@ -78,6 +79,16 @@ To add the integration in Kibana:
 4. Add the integration to the agent policy of the hosts where Claude Code or Claude Desktop runs, and save.
 
 The **[Claude Code Transcripts] Business Analytics** dashboard estimates spend from a `claude-model-pricing` lookup index of per-model token prices. Create it before using the spend panels; the [companion repository](https://github.com/iamhowardtheduck/claude-code-elastic) has a loader.
+
+### Detection rules and Entity Analytics
+
+The [companion repository](https://github.com/iamhowardtheduck/claude-code-elastic) has 10 Elastic Security ES|QL detection rules for the `transcript` data stream (`extras/setup.sh rules`, imported disabled). They cover actions blocked by auto mode, prompt injection and jailbreak attempts, prompts that ask to disable security, destructive, remote-shell, credential-access and persistence commands run by the agent, secrets exposed to the model, sensitive credential files, paste, webhook and tunnel sites, and prompts semantically similar to malicious intent.
+
+The alerts these rules raise also power Entity Analytics. Every rule keeps `user.name` and `host.name` in its alert and has a risk score (21, 47 or 73), so with the entity risk score engine turned on (**Security > Manage > Entity Risk Score**), each alert adds to the risk score of the developer and of the workstation it came from:
+
+- Users and hosts whose agents keep tripping these rules rise in the **Entity Analytics** dashboard.
+- Their alerts appear in the risk summary of the user and host flyouts, next to the rest of their activity.
+- Asset criticality assigned to those users and hosts weights their scores, as it does for any other alert.
 
 ### Enable ML inference
 
