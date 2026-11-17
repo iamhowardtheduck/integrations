@@ -272,6 +272,7 @@ For help with Elastic ingest tools, check [Common problems](https://www.elastic.
 - Prompts have `claude_code.prompt_embedding_error`: the embedding endpoint could not be called. Check step 5 of [Enable ML inference](#enable-ml-inference).
 - Prompts have `claude_code.prompt_classification.errors`: a model is not deployed or its queue is full. Check that all six deployments are `started` with `GET _ml/trained_models/_stats`, and see [Performance and scaling](#performance-and-scaling).
 - Claude Desktop events are tagged `claude_desktop_unparsed_line`: the line has no recognised timestamp. The line is kept as it is in `message`.
+- Transcript events are tagged `claude_code_redaction_failed` and have no `message` or `claude_code` content: the pipeline failed before the line could be scanned for credentials, so the fields taken from it were dropped rather than stored unredacted. `error.message` names the processor that failed, without the failure message, which can quote the line.
 - Claude Desktop events are tagged `claude_desktop_redaction_failed` and have no `message`: the pipeline failed before the line could be scanned for credentials, so the line and the MCP, `gen_ai` and `log.logger` fields taken from it were dropped rather than stored unredacted. `error.message` names the processor that failed, without the failure message, which can quote the line.
 - MCP messages are counted twice: each MCP message is written to both `mcp.log` and `mcp-server-<name>.log`. Filter on one `claude_desktop.log_file` when counting.
 - MCP tool names are missing: current Claude Desktop builds log only a summary of each MCP message, so `gen_ai.tool.name` is set only for older builds.
@@ -326,7 +327,8 @@ The `transcript` data stream provides events from Claude Code session transcript
 - `event.id` is the line's UUID and is also the document `_id`, so resumed sessions, which rewrite earlier lines into a new file, do not create duplicates.
 - `gen_ai.usage.input_tokens` includes cached tokens, as the OpenTelemetry conventions require. For cost, use Anthropic's raw split under `claude_code.message.usage.*`, because uncached input, cache reads and cache writes are priced differently.
 - Tool inputs are extracted into `claude_code.tool_input.{command,file_path,url,skill,description}`.
-- Secrets are replaced with `[REDACTED:<type>]` in `message`, `claude_code.message.content` and the tool inputs, and `claude_code.secrets.*` records only their type and length.
+- Secrets are replaced with `[REDACTED:<type>]` in every field taken from the line: `message`, all of `claude_code` (prompts, responses, tool inputs and output, and metadata such as `cwd`), `gen_ai.*` (including tool call IDs) and `process.working_directory`. `claude_code.secrets.*` records only their type and length. A JSON value under a credential key, such as `"password"` or `"Authorization"`, is redacted whole, including when it contains spaces or escapes.
+- Tool inputs and other values nested more than 25 levels deep are not scanned, so they are replaced with `[TRUNCATED:depth]`.
 - With ML inference: `claude_code.prompt_embedding` (768 dimensions, cosine), `claude_code.prompt_classification.*` (scores, categories, entities and `flagged`), semantic threat flags in `claude_code.prompt_classification.semantic.*`, and timing in `claude_code.inference.*`.
 
 ##### Transcripts fields
