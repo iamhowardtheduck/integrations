@@ -32,11 +32,13 @@ The Claude Code Transcripts integration collects log messages of the following t
 - Claude Code transcripts (`transcript` data stream): one document per conversation line, that is user prompts, assistant responses, tool calls and tool results, subagent prompts, slash commands and notifications. Each includes the model, token usage and tool inputs.
 - Claude Desktop app logs (`desktop_log` data stream; `main.log`, `chrome-native-host.log` and other app log files): sign-in, plugin and update activity, and app errors.
 - Claude Desktop MCP logs (`desktop_log` data stream; `mcp.log` and `mcp-server-<name>.log`): MCP server start-up and errors, and each MCP request, response and notification.
+- ML inference statistics (`inference_stats` data stream, optional): the state, queue, throughput, latency and errors of each trained model deployment, and the counters of this integration's ingest pipelines, sampled every minute from the Elasticsearch statistics APIs.
 
 ### Supported use cases
 
 - Usage and cost analytics: activity by user and project, models, token usage, and estimated spend, on the **[Claude Code Transcripts] Business Analytics** dashboard.
 - Security monitoring: risky commands, secrets, file and network access, and blocked actions on the **[Claude Code Transcripts] Security** dashboard. With ML inference, also prompt injection, jailbreaks, risky agent actions, personal data and semantic threat search.
+- Inference capacity: whether ML inference keeps up with the prompts (queue, throughput, estimated utilisation, errors, prompt inference time and ingest lag), on the **[Claude Code Transcripts] ML Inference Admin** dashboard.
 - Tool auditing: which tools and MCP servers are used, on which hosts and by which users.
 - Secret exposure: `claude_code.secrets.types` and `claude_desktop.secrets.types` show which kinds of credentials appeared, without storing them.
 - Troubleshooting: MCP server crashes, failed responses and Claude Desktop errors, by host and by server.
@@ -49,6 +51,7 @@ The Claude Code Transcripts integration collects log messages of the following t
 - For ML inference only:
   - The `.jina-embeddings-v5-text-nano` inference endpoint. It is available by default on Elastic Cloud; self-managed clusters need Cloud Connect to the Elastic Inference Service (Elastic Stack 9.3 or later).
   - For prompt classification, a Platinum or Enterprise licence (or a trial) for third-party NLP models, and ML nodes with about 10 GB of ML memory to start with.
+- For ML inference statistics only: an Elasticsearch URL that the agent can reach, and an API key with the `monitor` and `monitor_ml` cluster privileges.
 
 ## How do I deploy this integration?
 
@@ -75,7 +78,17 @@ To add the integration in Kibana:
 3. Under **Claude Desktop app and MCP logs**, check the settings:
    - **Paths**: the log files to read. The defaults cover every user's logs in `%APPDATA%\Claude\logs` and `%LOCALAPPDATA%\Claude\Logs` on Windows and `~/Library/Logs/Claude` on macOS.
    - **Ignore older**, **Maximum event size (bytes)**, **Tags**, **Processors** and **Custom configurations** (advanced). The pipeline truncates `message` at 64 KiB in any case, and sets `claude_desktop.truncated`.
-4. Add the integration to the agent policy of the hosts where Claude Code or Claude Desktop runs, and save.
+4. Optionally, if you use ML inference, turn on **ML inference statistics** and set:
+   - **Elasticsearch URL**: the cluster to poll, reachable from the agent.
+   - **API key**: a Base64-encoded API key with the `monitor` and `monitor_ml` cluster privileges. To create one, run this in **Dev Tools** and use the `encoded` value:
+     ```
+     POST _security/api_key
+     {"name": "claude-code-transcripts-inference-stats", "role_descriptors": {"stats": {"cluster": ["monitor", "monitor_ml"]}}}
+     ```
+   - **Interval** (default `1m`), **Pipeline name prefix** (default `logs-claude_code_transcripts.`, the pipelines whose counters are collected), **SSL configuration** (for example, a private CA) and **Tags**.
+
+   One agent is enough for this input: add it to a single agent policy, not to every host.
+5. Add the integration to the agent policy of the hosts where Claude Code or Claude Desktop runs, and save.
 
 The **[Claude Code Transcripts] Business Analytics** dashboard estimates spend from a `claude-model-pricing` lookup index of per-model token prices. Create it before using the spend panels; the [companion repository](https://github.com/iamhowardtheduck/claude-code-elastic) has a loader.
 
@@ -233,7 +246,8 @@ The [companion repository](https://github.com/iamhowardtheduck/claude-code-elast
 1. Run a short Claude Code session on a host with the agent, or open Claude Desktop and use an MCP tool.
 2. In Kibana, go to **Discover** and filter on `data_stream.dataset: "claude_code_transcripts.transcript"` or `data_stream.dataset: "claude_code_transcripts.desktop_log"`.
 3. Check that transcript events arrive with an `event.action` such as `user-prompt` or `tool-use` and with `user.name` set, and that Claude Desktop events have `claude_desktop.log_file` set.
-4. With ML inference on, check that new `user-prompt` events have `claude_code.prompt_embedding_model` and, with classification, `claude_code.prompt_classification.scores`. To test each model, run the `_infer` requests below; the expected result is in the comment above each one.
+4. With ML inference statistics on, filter on `data_stream.dataset: "claude_code_transcripts.inference_stats"` and check that one event per model deployment arrives each interval, with `ml_inference.deployment.state: started`.
+5. With ML inference on, check that new `user-prompt` events have `claude_code.prompt_embedding_model` and, with classification, `claude_code.prompt_classification.scores`. To test each model, run the `_infer` requests below; the expected result is in the comment above each one.
 
 ```
 # expected: INJECTION
@@ -271,6 +285,7 @@ For help with Elastic ingest tools, check [Common problems](https://www.elastic.
 - Token totals are too high: one assistant turn can span several transcript lines that share `gen_ai.response.id`, and each repeats the usage. Deduplicate on `gen_ai.response.id` before summing tokens.
 - Prompts have `claude_code.prompt_embedding_error`: the embedding endpoint could not be called. Check step 5 of [Enable ML inference](#enable-ml-inference).
 - Prompts have `claude_code.prompt_classification.errors`: a model is not deployed or its queue is full. Check that all six deployments are `started` with `GET _ml/trained_models/_stats`, and see [Performance and scaling](#performance-and-scaling).
+- ML inference statistics events have `error.message` starting `Elasticsearch stats request failed`: the stats request failed. `error.code` holds the two HTTP status codes; check the URL, the API key's privileges and the SSL configuration.
 - Claude Desktop events are tagged `claude_desktop_unparsed_line`: the line has no recognised timestamp. The line is kept as it is in `message`.
 - Transcript events are tagged `claude_code_redaction_failed` and have no `message` or `claude_code` content: the pipeline failed before the line could be scanned for credentials, so the fields taken from it were dropped rather than stored unredacted. `error.message` names the processor that failed, without the failure message, which can quote the line.
 - Claude Desktop events are tagged `claude_desktop_redaction_failed` and have no `message`: the pipeline failed before the line could be scanned for credentials, so the line and the MCP, `gen_ai` and `log.logger` fields taken from it were dropped rather than stored unredacted. `error.message` names the processor that failed, without the failure message, which can quote the line.
@@ -291,6 +306,7 @@ ML inference is the main cost, and it applies to human prompts only. Each classi
 - Plan on one 1-thread allocation of `cross-encoder__nli-deberta-v3-base-128` for about 290 prompts per hour on self-managed CPU nodes, plus 50% headroom. On Elastic Cloud ML nodes, one allocation handled about 720 prompts per hour.
 - One or two allocations of each of the other five models are usually enough.
 - Use 1 thread per allocation (**Optimized for ingest** in Kibana); ingest-time inference is many small requests.
+- Watch the **[Claude Code Transcripts] ML Inference Admin** dashboard: a growing queue or an estimated utilisation above 1 means a deployment needs more allocations.
 - When the zero-shot model is too small, prompts are still indexed, but with a high `claude_code.inference.total_ms`, ingest lag, and finally queue rejections in `claude_code.prompt_classification.errors`.
 - To reduce the load, turn off **Prompt classification** for embedding only, or enable inference only in the agent policies that need it.
 
@@ -347,6 +363,11 @@ With ML inference enabled, the ingest pipeline calls these Elasticsearch APIs th
 
 - The `.jina-embeddings-v5-text-nano` inference endpoint, for prompt embeddings.
 - The six trained model deployments listed in [Enable ML inference](#enable-ml-inference), for classification.
+
+The ML inference statistics input polls these APIs every interval:
+
+- [Get trained models statistics](https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-ml-get-trained-models-stats) (`GET _ml/trained_models/_stats`): one event per deployment.
+- [Get node statistics](https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-nodes-stats) (`GET _nodes/stats/ingest`): one event per ingest pipeline of this integration.
 
 ### Vendor documentation links
 
@@ -794,6 +815,114 @@ An example event for `desktop_log` looks as following:
     },
     "user": {
         "name": "carol"
+    }
+}
+```
+
+#### ML inference statistics
+
+The `inference_stats` data stream provides events from the Elasticsearch statistics APIs of the following types: trained model deployment statistics (`ml_inference.kind: deployment`) and ingest pipeline statistics (`ml_inference.kind: pipeline`).
+
+- `ml_inference.deployment.*`: allocations, adaptive allocation limits, pending requests, throughput and cache hits in the last minute, average latency with and without cache hits, error, rejection and timeout counts, and derived load figures: `pending_per_allocation`, `queue_fill` and `est_utilization`.
+- `ml_inference.pipeline.*`: document counts, failures, in-flight documents, processing time and the number of nodes running the pipeline.
+
+##### ML inference statistics fields
+
+**Exported fields**
+
+| Field | Description | Type |
+|---|---|---|
+| @timestamp | Event timestamp. | date |
+| data_stream.dataset | Data stream dataset. | constant_keyword |
+| data_stream.namespace | Data stream namespace. | constant_keyword |
+| data_stream.type | Data stream type. | constant_keyword |
+| event.dataset | Event dataset. | constant_keyword |
+| event.module | Event module. | constant_keyword |
+| ml_inference.deployment.adaptive_enabled |  | boolean |
+| ml_inference.deployment.adaptive_max |  | long |
+| ml_inference.deployment.adaptive_min |  | long |
+| ml_inference.deployment.allocation_state |  | keyword |
+| ml_inference.deployment.allocations |  | long |
+| ml_inference.deployment.avg_inference_ms |  | double |
+| ml_inference.deployment.avg_inference_ms_excl_cache |  | double |
+| ml_inference.deployment.cache_hit_count |  | long |
+| ml_inference.deployment.cache_hits_last_minute |  | long |
+| ml_inference.deployment.error_count |  | long |
+| ml_inference.deployment.est_utilization |  | double |
+| ml_inference.deployment.id |  | keyword |
+| ml_inference.deployment.inference_count |  | long |
+| ml_inference.deployment.model_id |  | keyword |
+| ml_inference.deployment.nodes |  | keyword |
+| ml_inference.deployment.peak_throughput_per_minute |  | long |
+| ml_inference.deployment.pending_per_allocation |  | double |
+| ml_inference.deployment.pending_requests |  | long |
+| ml_inference.deployment.priority |  | keyword |
+| ml_inference.deployment.queue_capacity |  | long |
+| ml_inference.deployment.queue_fill |  | double |
+| ml_inference.deployment.rejected_execution_count |  | long |
+| ml_inference.deployment.routing_states |  | keyword |
+| ml_inference.deployment.state |  | keyword |
+| ml_inference.deployment.target_allocations |  | long |
+| ml_inference.deployment.threads_per_allocation |  | long |
+| ml_inference.deployment.throughput_last_minute |  | long |
+| ml_inference.deployment.timeout_count |  | long |
+| ml_inference.kind |  | keyword |
+| ml_inference.pipeline.count |  | long |
+| ml_inference.pipeline.current |  | long |
+| ml_inference.pipeline.failed |  | long |
+| ml_inference.pipeline.name |  | keyword |
+| ml_inference.pipeline.nodes_active |  | long |
+| ml_inference.pipeline.time_in_millis |  | long |
+
+
+##### ML inference statistics sample event
+
+An example event for `inference_stats` looks as following:
+
+```json
+{
+    "data_stream": {
+        "dataset": "claude_code_transcripts.inference_stats",
+        "namespace": "default",
+        "type": "metrics"
+    },
+    "ecs": {
+        "version": "9.3.0"
+    },
+    "ml_inference": {
+        "deployment": {
+            "adaptive_enabled": false,
+            "allocation_state": "fully_allocated",
+            "allocations": 1,
+            "avg_inference_ms": 124.162874251497,
+            "avg_inference_ms_excl_cache": 1092.2225201072386,
+            "cache_hit_count": 2967,
+            "cache_hits_last_minute": 0,
+            "error_count": 0,
+            "est_utilization": 0.0,
+            "id": "cardiffnlp__twitter-roberta-base-offensive",
+            "inference_count": 3340,
+            "model_id": "cardiffnlp__twitter-roberta-base-offensive",
+            "nodes": [
+                "es-node-01"
+            ],
+            "peak_throughput_per_minute": 282,
+            "pending_per_allocation": 0.0,
+            "pending_requests": 0,
+            "priority": "normal",
+            "queue_capacity": 10000,
+            "queue_fill": 0.0,
+            "rejected_execution_count": 0,
+            "routing_states": [
+                "started"
+            ],
+            "state": "started",
+            "target_allocations": 1,
+            "threads_per_allocation": 1,
+            "throughput_last_minute": 0,
+            "timeout_count": 0
+        },
+        "kind": "deployment"
     }
 }
 ```

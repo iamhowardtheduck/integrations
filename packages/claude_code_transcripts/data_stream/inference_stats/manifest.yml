@@ -5,7 +5,7 @@ streams:
   title: ML inference statistics
   template_path: cel.yml.hbs
   enabled: false
-  description: Polls _ml/trained_models/_stats and _nodes/stats/ingest every interval. Feeds the [ML Inference] Admin dashboard. Enable it only if you use the integration's ML inference.
+  description: Polls _ml/trained_models/_stats and _nodes/stats/ingest every interval. Feeds the [Claude Code Transcripts] ML Inference Admin dashboard. Enable it only if you use the integration's ML inference.
   vars:
   - name: url
     type: text
