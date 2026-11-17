@@ -84,11 +84,13 @@ The **[Claude Code Transcripts] Business Analytics** dashboard estimates spend f
 
 The [companion repository](https://github.com/iamhowardtheduck/claude-code-elastic) has 10 Elastic Security ES|QL detection rules for the `transcript` data stream (`extras/setup.sh rules`, imported disabled). They cover actions blocked by auto mode, prompt injection and jailbreak attempts, prompts that ask to disable security, destructive, remote-shell, credential-access and persistence commands run by the agent, secrets exposed to the model, sensitive credential files, paste, webhook and tunnel sites, and prompts semantically similar to malicious intent.
 
-The alerts these rules raise also power Entity Analytics. Every rule keeps `user.name` and `host.name` in its alert and has a risk score (21, 47 or 73), so with the entity risk score engine turned on (**Security > Manage > Entity Risk Score**), each alert adds to the risk score of the developer and of the workstation it came from:
+The alerts these rules raise also power Entity Analytics. Every rule keeps `user.name` and `host.name` in its alert and has a risk score (21, 47 or 73), so with entity risk scoring turned on (in Kibana under **Security > Manage**, **Entity analytics**), each alert adds to the risk score of the developer and of the workstation it came from:
 
 - Users and hosts whose agents keep tripping these rules rise in the **Entity Analytics** dashboard.
 - Their alerts appear in the risk summary of the user and host flyouts, next to the rest of their activity.
 - Asset criticality assigned to those users and hosts weights their scores, as it does for any other alert.
+
+With Entity Store V2, a user is identified by `user.name` together with `host.id`. Elastic Agent adds `host.id` to every event, so this works as is; events indexed without it, such as those from a load generator, still raise the host's risk score but not the user's.
 
 ### Enable ML inference
 
