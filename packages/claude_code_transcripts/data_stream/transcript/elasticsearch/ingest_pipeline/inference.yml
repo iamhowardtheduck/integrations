@@ -2,17 +2,39 @@
 description: 'Claude Code transcripts: ML inference (prompt embedding via the inference API + NLP classification), with timing in claude_code.inference.*'
 processors:
 - script:
-    description: 'Embedding input: the (already redacted) human prompt, capped at 8000 chars'
+    description: >-
+      Embedding input: the human prompt, already redacted by the transcript pipeline,
+      trimmed and capped at 8000 characters, in claude_code.tmp.embed_input.
     tag: prompt-embedding-input
-    source: 'String m = ctx.message.trim(); ctx._embed_input = m.length() > 8000 ? m.substring(0, 8000) : m;'
+    source: |
+      String m = ctx.message.trim();
+      Map tmp = ctx.claude_code.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        ctx.claude_code.tmp = tmp;
+      }
+      tmp.embed_input = m.length() > 8000 ? m.substring(0, 8000) : m;
     lang: painless
     if: (ctx.tags != null && ctx.tags.contains('claude_code_embed')) && (ctx.claude_code?.human_prompt == true && ctx.message instanceof String && ctx.message.trim().length() > 0)
 - script:
     ignore_failure: true
-    description: Inference timer start (temporary field, removed before indexing)
+    description: >-
+      Start the inference timers before the embedding call. The marks are kept in
+      claude_code.tmp, which is removed before indexing.
     tag: inference-timer-start-embedding
-    source: long n = System.nanoTime(); ctx._inf_mark = n; if (ctx._inf_t0 == null) { ctx._inf_t0 = n; }
-    if: ctx._embed_input != null
+    source: |
+      // Set the mark for the next step timer, and the start of the whole inference run.
+      long n = System.nanoTime();
+      Map tmp = ctx.claude_code.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        ctx.claude_code.tmp = tmp;
+      }
+      tmp.inf_mark = n;
+      if (tmp.inf_t0 == null) {
+        tmp.inf_t0 = n;
+      }
+    if: ctx.claude_code?.tmp?.embed_input != null
 - inference:
     on_failure:
     - set:
@@ -20,22 +42,58 @@ processors:
         value: '{{{_ingest.on_failure_message}}}'
         tag: prompt-embedding_on_failure_set_claude_code_prompt_embedding_error
     input_output:
-    - input_field: _embed_input
+    - input_field: claude_code.tmp.embed_input
       output_field: claude_code.prompt_embedding
-    description: Jina v5 text nano via EIS; failures never block indexing
+    description: >-
+      Prompt embedding with the .jina-embeddings-v5-text-nano endpoint (Elastic Inference
+      Service) into claude_code.prompt_embedding. A failure is recorded in
+      claude_code.prompt_embedding_error and never blocks indexing.
     tag: prompt-embedding
     model_id: .jina-embeddings-v5-text-nano
-    if: ctx._embed_input != null
+    if: ctx.claude_code?.tmp?.embed_input != null
 - script:
     ignore_failure: true
-    description: Elapsed ms of the EIS embedding call
+    description: Record the duration of the embedding call in claude_code.inference.embedding_ms.
     tag: inference-timer-embedding
     params:
       top: true
       step: embedding_ms
-    if: ctx._embed_input != null
+    if: ctx.claude_code?.tmp?.embed_input != null
     lang: painless
-    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+    source: |
+      // Elapsed time since the previous mark, in ms with one decimal. The step is recorded
+      // in claude_code.inference.<step> when params.top is set, otherwise in
+      // claude_code.inference.steps.<step>. Then the mark moves to now.
+      long n = System.nanoTime();
+      Map cc = ctx.claude_code;
+      if (cc == null) {
+        cc = new HashMap();
+        ctx.claude_code = cc;
+      }
+      Map tmp = cc.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        cc.tmp = tmp;
+      }
+      if (tmp.inf_mark != null) {
+        Map inf = cc.inference;
+        if (inf == null) {
+          inf = new HashMap();
+          cc.inference = inf;
+        }
+        double ms = Math.round((n - ((Number) tmp.inf_mark).longValue()) / 100000.0) / 10.0;
+        if (params.containsKey('top') && params.top == true) {
+          inf[params.step] = ms;
+        } else {
+          Map st = inf.steps;
+          if (st == null) {
+            st = new HashMap();
+            inf.steps = st;
+          }
+          st[params.step] = ms;
+        }
+      }
+      tmp.inf_mark = n;
 - set:
     tag: prompt-embedding-model
     field: claude_code.prompt_embedding_model
@@ -43,54 +101,110 @@ processors:
     value: .jina-embeddings-v5-text-nano
 - remove:
     ignore_missing: true
-    description: drop the temp input and the model_id the inference processor writes beside its output
+    description: >-
+      Remove the embedding input and the model_id that the inference processor writes
+      beside its output.
     tag: prompt-embedding-cleanup
     field:
-    - _embed_input
+    - claude_code.tmp.embed_input
     - claude_code.model_id
 - script:
     ignore_failure: true
-    description: Inference timer start (temporary field, removed before indexing)
+    description: >-
+      Start, or continue, the inference timers before the classification pipeline. The
+      marks are kept in claude_code.tmp, which is removed before indexing.
     tag: inference-timer-start-classify
-    source: long n = System.nanoTime(); ctx._inf_mark = n; if (ctx._inf_t0 == null) { ctx._inf_t0 = n; }
+    source: |
+      // Set the mark for the next step timer, and the start of the whole inference run.
+      long n = System.nanoTime();
+      Map tmp = ctx.claude_code.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        ctx.claude_code.tmp = tmp;
+      }
+      tmp.inf_mark = n;
+      if (tmp.inf_t0 == null) {
+        tmp.inf_t0 = n;
+      }
     if: (ctx.tags != null && ctx.tags.contains('claude_code_classify')) && (ctx.claude_code?.human_prompt == true && ctx.message instanceof String && ctx.message.length() > 0)
 - pipeline:
     name: '{{ IngestPipeline "classify" }}'
     ignore_failure: true
-    description: Run NLP classifiers on human prompts only
+    description: >-
+      Run the NLP classifiers (the classify pipeline) on human prompts, when the
+      integration's Prompt classification setting is on. Failures never block indexing;
+      each model's error is recorded in claude_code.prompt_classification.errors.
     tag: prompt-classification
     if: (ctx.tags != null && ctx.tags.contains('claude_code_classify')) && (ctx.claude_code?.human_prompt == true && ctx.message instanceof String && ctx.message.length() > 0)
 - script:
     tag: semantic-threats
     lang: painless
-    description: 'Semantic threat flags: best cosine similarity of the prompt embedding to 29 threat phrases in 10 concepts (tools/semantic-concepts.json); >= threshold adds security:semantic_<concept> and flagged'
+    description: >-
+      Semantic threat flags, from the embedding alone: the best cosine similarity of the
+      prompt embedding to 29 threat phrases in 10 concepts goes into
+      claude_code.prompt_classification.semantic. A score at or above params.threshold adds
+      the category security:semantic_<concept> and sets flagged.
     if: ctx.claude_code?.prompt_embedding != null
     source: |
-      // Cosine similarity of the prompt embedding to the threat concepts (unit vectors in params).
+      // Cosine similarity of the prompt embedding to each threat phrase. The phrase vectors in
+      // params are unit vectors, so dividing the dot product by the prompt vector's norm
+      // gives the cosine. Each concept scores the best of its phrases.
       def raw = ctx.claude_code?.prompt_embedding;
-      if (raw == null) { return; }
+      if (raw == null) {
+        return;
+      }
+      // The inference output may be a primitive array rather than a List.
       List v;
-      if (raw instanceof List) { v = raw; } else { v = new ArrayList(); for (def x : raw) { v.add(x); } }   // inference output may be a primitive array
-      if (v.isEmpty()) { return; }
+      if (raw instanceof List) {
+        v = raw;
+      } else {
+        v = new ArrayList();
+        for (def x : raw) {
+          v.add(x);
+        }
+      }
+      if (v.isEmpty()) {
+        return;
+      }
+
       double n = 0;
-      for (def x : v) { double d = ((Number) x).doubleValue(); n += d * d; }
-      if (n == 0) { return; }
+      for (def x : v) {
+        double d = ((Number) x).doubleValue();
+        n += d * d;
+      }
+      if (n == 0) {
+        return;
+      }
       n = Math.sqrt(n);
-      double best = -1; String bestConcept = null; Map per = new HashMap();
+
+      double best = -1;
+      String bestConcept = null;
+      Map per = new HashMap();
       for (def c : params.concepts) {
         double cb = -1;
         for (def u : c.vectors) {
           double s = 0;
           int len = u.size() < v.size() ? u.size() : v.size();
-          for (int i = 0; i < len; i++) { s += ((Number) v.get(i)).doubleValue() * ((Number) u.get(i)).doubleValue(); }
+          for (int i = 0; i < len; i++) {
+            s += ((Number) v.get(i)).doubleValue() * ((Number) u.get(i)).doubleValue();
+          }
           s = s / n;
-          if (s > cb) { cb = s; }
+          if (s > cb) {
+            cb = s;
+          }
         }
         per[c.name] = Math.round(cb * 1000) / 1000.0;
-        if (cb > best) { best = cb; bestConcept = c.name; }
+        if (cb > best) {
+          best = cb;
+          bestConcept = c.name;
+        }
       }
+
       def pc = ctx.claude_code.prompt_classification;
-      if (pc == null) { pc = new HashMap(); ctx.claude_code.prompt_classification = pc; }
+      if (pc == null) {
+        pc = new HashMap();
+        ctx.claude_code.prompt_classification = pc;
+      }
       Map sem = new HashMap();
       sem.score = Math.round(best * 1000) / 1000.0;
       sem.concept = bestConcept;
@@ -98,9 +212,13 @@ processors:
       sem.threshold = params.threshold;
       pc.semantic = sem;
       if (best >= params.threshold) {
-        if (pc.categories == null) { pc.categories = new ArrayList(); }
+        if (pc.categories == null) {
+          pc.categories = new ArrayList();
+        }
         String cat = 'security:semantic_' + bestConcept;
-        if (!pc.categories.contains(cat)) { pc.categories.add(cat); }
+        if (!pc.categories.contains(cat)) {
+          pc.categories.add(cat);
+        }
         pc.flagged = true;
       }
     params:
@@ -162,33 +280,55 @@ processors:
         tag: semantic-threats_on_failure_append_claude_code_prompt_classification_errors
 - script:
     ignore_failure: true
-    description: Total inference duration = end - begin; begin/end are not stored
+    description: >-
+      Record the totals in claude_code.inference: total_ms from the start of the run, and
+      classify_ms and classify_calls from the per-model steps.
     tag: inference-timer-finish
     source: |
       long n = System.nanoTime();
-      Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; }
-      Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; }
+      Map cc = ctx.claude_code;
+      Map inf = cc.inference;
+      if (inf == null) {
+        inf = new HashMap();
+        cc.inference = inf;
+      }
       double cls = 0.0;
       Map st = inf.steps;
       if (st != null) {
-        for (def e : st.entrySet()) { cls += ((Number) e.getValue()).doubleValue(); }
+        for (def e : st.entrySet()) {
+          cls += ((Number) e.getValue()).doubleValue();
+        }
         inf.classify_ms = Math.round(cls * 10.0) / 10.0;
         inf.classify_calls = st.size();
       }
-      inf.total_ms = Math.round((n - ((Number) ctx._inf_t0).longValue()) / 100000.0) / 10.0;
-    if: ctx._inf_t0 != null
+      inf.total_ms = Math.round((n - ((Number) cc.tmp.inf_t0).longValue()) / 100000.0) / 10.0;
+    if: ctx.claude_code?.tmp?.inf_t0 != null
 - remove:
     ignore_missing: true
     tag: inference-timer-cleanup
+    description: Remove the working fields.
     field:
-    - _inf_t0
-    - _inf_mark
+    - claude_code.tmp
 on_failure:
 - append:
     tag: append_error_message_on_failure
     field: error.message
-    value: Processor '{{{ _ingest.on_failure_processor_type }}}' {{{#_ingest.on_failure_processor_tag}}}with tag '{{{ _ingest.on_failure_processor_tag }}}' {{{/_ingest.on_failure_processor_tag}}}in pipeline '{{{ _ingest.pipeline }}}' failed with message '{{{ _ingest.on_failure_message }}}'
+    value: >-
+      Processor '{{{ _ingest.on_failure_processor_type }}}'
+      {{{#_ingest.on_failure_processor_tag}}}with tag '{{{ _ingest.on_failure_processor_tag }}}'
+      {{{/_ingest.on_failure_processor_tag}}}in pipeline '{{{ _ingest.pipeline }}}'
+      failed with message '{{{ _ingest.on_failure_message }}}'
 - set:
     tag: set_event_kind_pipeline_error
     field: event.kind
     value: pipeline_error
+- append:
+    tag: append_tags_preserve_original_event_on_failure
+    field: tags
+    value: preserve_original_event
+    allow_duplicates: false
+- remove:
+    field:
+    - claude_code.tmp
+    ignore_missing: true
+    tag: remove_temp_fields_on_failure

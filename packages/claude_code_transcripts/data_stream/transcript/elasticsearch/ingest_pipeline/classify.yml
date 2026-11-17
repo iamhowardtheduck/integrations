@@ -7,7 +7,7 @@ processors:
         field: claude_code.prompt_classification.errors
         value: 'injection: {{{_ingest.on_failure_message}}}'
         tag: classify-injection_on_failure_append_claude_code_prompt_classification_errors
-    target_field: _ml.injection
+    target_field: claude_code.tmp.ml.injection
     inference_config:
       text_classification:
         num_top_classes: -1
@@ -17,19 +17,52 @@ processors:
     model_id: protectai__deberta-v3-base-prompt-injection-v2
 - script:
     ignore_failure: true
-    description: Elapsed ms of the preceding inference step (injection_ms)
+    description: Record the duration of the preceding model call in claude_code.inference.steps.injection_ms.
     tag: inference-timer-injection
     params:
       step: injection_ms
     lang: painless
-    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+    source: |
+      // Elapsed time since the previous mark, in ms with one decimal. The step is recorded
+      // in claude_code.inference.<step> when params.top is set, otherwise in
+      // claude_code.inference.steps.<step>. Then the mark moves to now.
+      long n = System.nanoTime();
+      Map cc = ctx.claude_code;
+      if (cc == null) {
+        cc = new HashMap();
+        ctx.claude_code = cc;
+      }
+      Map tmp = cc.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        cc.tmp = tmp;
+      }
+      if (tmp.inf_mark != null) {
+        Map inf = cc.inference;
+        if (inf == null) {
+          inf = new HashMap();
+          cc.inference = inf;
+        }
+        double ms = Math.round((n - ((Number) tmp.inf_mark).longValue()) / 100000.0) / 10.0;
+        if (params.containsKey('top') && params.top == true) {
+          inf[params.step] = ms;
+        } else {
+          Map st = inf.steps;
+          if (st == null) {
+            st = new HashMap();
+            inf.steps = st;
+          }
+          st[params.step] = ms;
+        }
+      }
+      tmp.inf_mark = n;
 - inference:
     on_failure:
     - append:
         field: claude_code.prompt_classification.errors
         value: 'jailbreak: {{{_ingest.on_failure_message}}}'
         tag: classify-jailbreak_on_failure_append_claude_code_prompt_classification_errors
-    target_field: _ml.jailbreak
+    target_field: claude_code.tmp.ml.jailbreak
     inference_config:
       text_classification:
         num_top_classes: -1
@@ -39,19 +72,52 @@ processors:
     model_id: jackhhao__jailbreak-classifier
 - script:
     ignore_failure: true
-    description: Elapsed ms of the preceding inference step (jailbreak_ms)
+    description: Record the duration of the preceding model call in claude_code.inference.steps.jailbreak_ms.
     tag: inference-timer-jailbreak
     params:
       step: jailbreak_ms
     lang: painless
-    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+    source: |
+      // Elapsed time since the previous mark, in ms with one decimal. The step is recorded
+      // in claude_code.inference.<step> when params.top is set, otherwise in
+      // claude_code.inference.steps.<step>. Then the mark moves to now.
+      long n = System.nanoTime();
+      Map cc = ctx.claude_code;
+      if (cc == null) {
+        cc = new HashMap();
+        ctx.claude_code = cc;
+      }
+      Map tmp = cc.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        cc.tmp = tmp;
+      }
+      if (tmp.inf_mark != null) {
+        Map inf = cc.inference;
+        if (inf == null) {
+          inf = new HashMap();
+          cc.inference = inf;
+        }
+        double ms = Math.round((n - ((Number) tmp.inf_mark).longValue()) / 100000.0) / 10.0;
+        if (params.containsKey('top') && params.top == true) {
+          inf[params.step] = ms;
+        } else {
+          Map st = inf.steps;
+          if (st == null) {
+            st = new HashMap();
+            inf.steps = st;
+          }
+          st[params.step] = ms;
+        }
+      }
+      tmp.inf_mark = n;
 - inference:
     on_failure:
     - append:
         field: claude_code.prompt_classification.errors
         value: 'toxicity: {{{_ingest.on_failure_message}}}'
         tag: classify-toxicity_on_failure_append_claude_code_prompt_classification_errors
-    target_field: _ml.toxicity
+    target_field: claude_code.tmp.ml.toxicity
     inference_config:
       text_classification:
         num_top_classes: -1
@@ -61,19 +127,52 @@ processors:
     model_id: s-nlp__roberta_toxicity_classifier
 - script:
     ignore_failure: true
-    description: Elapsed ms of the preceding inference step (toxicity_ms)
+    description: Record the duration of the preceding model call in claude_code.inference.steps.toxicity_ms.
     tag: inference-timer-toxicity
     params:
       step: toxicity_ms
     lang: painless
-    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+    source: |
+      // Elapsed time since the previous mark, in ms with one decimal. The step is recorded
+      // in claude_code.inference.<step> when params.top is set, otherwise in
+      // claude_code.inference.steps.<step>. Then the mark moves to now.
+      long n = System.nanoTime();
+      Map cc = ctx.claude_code;
+      if (cc == null) {
+        cc = new HashMap();
+        ctx.claude_code = cc;
+      }
+      Map tmp = cc.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        cc.tmp = tmp;
+      }
+      if (tmp.inf_mark != null) {
+        Map inf = cc.inference;
+        if (inf == null) {
+          inf = new HashMap();
+          cc.inference = inf;
+        }
+        double ms = Math.round((n - ((Number) tmp.inf_mark).longValue()) / 100000.0) / 10.0;
+        if (params.containsKey('top') && params.top == true) {
+          inf[params.step] = ms;
+        } else {
+          Map st = inf.steps;
+          if (st == null) {
+            st = new HashMap();
+            inf.steps = st;
+          }
+          st[params.step] = ms;
+        }
+      }
+      tmp.inf_mark = n;
 - inference:
     on_failure:
     - append:
         field: claude_code.prompt_classification.errors
         value: 'offensive: {{{_ingest.on_failure_message}}}'
         tag: classify-offensive_on_failure_append_claude_code_prompt_classification_errors
-    target_field: _ml.offensive
+    target_field: claude_code.tmp.ml.offensive
     inference_config:
       text_classification:
         num_top_classes: -1
@@ -83,19 +182,52 @@ processors:
     model_id: cardiffnlp__twitter-roberta-base-offensive
 - script:
     ignore_failure: true
-    description: Elapsed ms of the preceding inference step (offensive_ms)
+    description: Record the duration of the preceding model call in claude_code.inference.steps.offensive_ms.
     tag: inference-timer-offensive
     params:
       step: offensive_ms
     lang: painless
-    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+    source: |
+      // Elapsed time since the previous mark, in ms with one decimal. The step is recorded
+      // in claude_code.inference.<step> when params.top is set, otherwise in
+      // claude_code.inference.steps.<step>. Then the mark moves to now.
+      long n = System.nanoTime();
+      Map cc = ctx.claude_code;
+      if (cc == null) {
+        cc = new HashMap();
+        ctx.claude_code = cc;
+      }
+      Map tmp = cc.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        cc.tmp = tmp;
+      }
+      if (tmp.inf_mark != null) {
+        Map inf = cc.inference;
+        if (inf == null) {
+          inf = new HashMap();
+          cc.inference = inf;
+        }
+        double ms = Math.round((n - ((Number) tmp.inf_mark).longValue()) / 100000.0) / 10.0;
+        if (params.containsKey('top') && params.top == true) {
+          inf[params.step] = ms;
+        } else {
+          Map st = inf.steps;
+          if (st == null) {
+            st = new HashMap();
+            inf.steps = st;
+          }
+          st[params.step] = ms;
+        }
+      }
+      tmp.inf_mark = n;
 - inference:
     on_failure:
     - append:
         field: claude_code.prompt_classification.errors
         value: 'security: {{{_ingest.on_failure_message}}}'
         tag: classify-security_on_failure_append_claude_code_prompt_classification_errors
-    target_field: _ml.security
+    target_field: claude_code.tmp.ml.security
     inference_config:
       zero_shot_classification:
         multi_label: false
@@ -118,20 +250,53 @@ processors:
     if: ctx.message instanceof String && ctx.message.trim().length() >= 20
 - script:
     ignore_failure: true
-    description: Elapsed ms of the preceding inference step (zeroshot_security_ms)
+    description: Record the duration of the preceding model call in claude_code.inference.steps.zeroshot_security_ms.
     tag: inference-timer-security
     params:
       step: zeroshot_security_ms
     if: ctx.message instanceof String && ctx.message.trim().length() >= 20
     lang: painless
-    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+    source: |
+      // Elapsed time since the previous mark, in ms with one decimal. The step is recorded
+      // in claude_code.inference.<step> when params.top is set, otherwise in
+      // claude_code.inference.steps.<step>. Then the mark moves to now.
+      long n = System.nanoTime();
+      Map cc = ctx.claude_code;
+      if (cc == null) {
+        cc = new HashMap();
+        ctx.claude_code = cc;
+      }
+      Map tmp = cc.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        cc.tmp = tmp;
+      }
+      if (tmp.inf_mark != null) {
+        Map inf = cc.inference;
+        if (inf == null) {
+          inf = new HashMap();
+          cc.inference = inf;
+        }
+        double ms = Math.round((n - ((Number) tmp.inf_mark).longValue()) / 100000.0) / 10.0;
+        if (params.containsKey('top') && params.top == true) {
+          inf[params.step] = ms;
+        } else {
+          Map st = inf.steps;
+          if (st == null) {
+            st = new HashMap();
+            inf.steps = st;
+          }
+          st[params.step] = ms;
+        }
+      }
+      tmp.inf_mark = n;
 - inference:
     on_failure:
     - append:
         field: claude_code.prompt_classification.errors
         value: 'agent_action: {{{_ingest.on_failure_message}}}'
         tag: classify-agent_action_on_failure_append_claude_code_prompt_classification_errors
-    target_field: _ml.agent_action
+    target_field: claude_code.tmp.ml.agent_action
     inference_config:
       zero_shot_classification:
         multi_label: false
@@ -151,20 +316,53 @@ processors:
     if: ctx.message instanceof String && ctx.message.trim().length() >= 20
 - script:
     ignore_failure: true
-    description: Elapsed ms of the preceding inference step (zeroshot_agent_action_ms)
+    description: Record the duration of the preceding model call in claude_code.inference.steps.zeroshot_agent_action_ms.
     tag: inference-timer-agent_action
     params:
       step: zeroshot_agent_action_ms
     if: ctx.message instanceof String && ctx.message.trim().length() >= 20
     lang: painless
-    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+    source: |
+      // Elapsed time since the previous mark, in ms with one decimal. The step is recorded
+      // in claude_code.inference.<step> when params.top is set, otherwise in
+      // claude_code.inference.steps.<step>. Then the mark moves to now.
+      long n = System.nanoTime();
+      Map cc = ctx.claude_code;
+      if (cc == null) {
+        cc = new HashMap();
+        ctx.claude_code = cc;
+      }
+      Map tmp = cc.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        cc.tmp = tmp;
+      }
+      if (tmp.inf_mark != null) {
+        Map inf = cc.inference;
+        if (inf == null) {
+          inf = new HashMap();
+          cc.inference = inf;
+        }
+        double ms = Math.round((n - ((Number) tmp.inf_mark).longValue()) / 100000.0) / 10.0;
+        if (params.containsKey('top') && params.top == true) {
+          inf[params.step] = ms;
+        } else {
+          Map st = inf.steps;
+          if (st == null) {
+            st = new HashMap();
+            inf.steps = st;
+          }
+          st[params.step] = ms;
+        }
+      }
+      tmp.inf_mark = n;
 - inference:
     on_failure:
     - append:
         field: claude_code.prompt_classification.errors
         value: 'task: {{{_ingest.on_failure_message}}}'
         tag: classify-task_on_failure_append_claude_code_prompt_classification_errors
-    target_field: _ml.task
+    target_field: claude_code.tmp.ml.task
     inference_config:
       zero_shot_classification:
         multi_label: false
@@ -188,19 +386,52 @@ processors:
     model_id: cross-encoder__nli-deberta-v3-base-128
 - script:
     ignore_failure: true
-    description: Elapsed ms of the preceding inference step (zeroshot_task_ms)
+    description: Record the duration of the preceding model call in claude_code.inference.steps.zeroshot_task_ms.
     tag: inference-timer-task
     params:
       step: zeroshot_task_ms
     lang: painless
-    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+    source: |
+      // Elapsed time since the previous mark, in ms with one decimal. The step is recorded
+      // in claude_code.inference.<step> when params.top is set, otherwise in
+      // claude_code.inference.steps.<step>. Then the mark moves to now.
+      long n = System.nanoTime();
+      Map cc = ctx.claude_code;
+      if (cc == null) {
+        cc = new HashMap();
+        ctx.claude_code = cc;
+      }
+      Map tmp = cc.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        cc.tmp = tmp;
+      }
+      if (tmp.inf_mark != null) {
+        Map inf = cc.inference;
+        if (inf == null) {
+          inf = new HashMap();
+          cc.inference = inf;
+        }
+        double ms = Math.round((n - ((Number) tmp.inf_mark).longValue()) / 100000.0) / 10.0;
+        if (params.containsKey('top') && params.top == true) {
+          inf[params.step] = ms;
+        } else {
+          Map st = inf.steps;
+          if (st == null) {
+            st = new HashMap();
+            inf.steps = st;
+          }
+          st[params.step] = ms;
+        }
+      }
+      tmp.inf_mark = n;
 - inference:
     on_failure:
     - append:
         field: claude_code.prompt_classification.errors
         value: 'interaction: {{{_ingest.on_failure_message}}}'
         tag: classify-interaction_on_failure_append_claude_code_prompt_classification_errors
-    target_field: _ml.interaction
+    target_field: claude_code.tmp.ml.interaction
     inference_config:
       zero_shot_classification:
         multi_label: false
@@ -215,19 +446,52 @@ processors:
     model_id: cross-encoder__nli-deberta-v3-base-128
 - script:
     ignore_failure: true
-    description: Elapsed ms of the preceding inference step (zeroshot_interaction_ms)
+    description: Record the duration of the preceding model call in claude_code.inference.steps.zeroshot_interaction_ms.
     tag: inference-timer-interaction
     params:
       step: zeroshot_interaction_ms
     lang: painless
-    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+    source: |
+      // Elapsed time since the previous mark, in ms with one decimal. The step is recorded
+      // in claude_code.inference.<step> when params.top is set, otherwise in
+      // claude_code.inference.steps.<step>. Then the mark moves to now.
+      long n = System.nanoTime();
+      Map cc = ctx.claude_code;
+      if (cc == null) {
+        cc = new HashMap();
+        ctx.claude_code = cc;
+      }
+      Map tmp = cc.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        cc.tmp = tmp;
+      }
+      if (tmp.inf_mark != null) {
+        Map inf = cc.inference;
+        if (inf == null) {
+          inf = new HashMap();
+          cc.inference = inf;
+        }
+        double ms = Math.round((n - ((Number) tmp.inf_mark).longValue()) / 100000.0) / 10.0;
+        if (params.containsKey('top') && params.top == true) {
+          inf[params.step] = ms;
+        } else {
+          Map st = inf.steps;
+          if (st == null) {
+            st = new HashMap();
+            inf.steps = st;
+          }
+          st[params.step] = ms;
+        }
+      }
+      tmp.inf_mark = n;
 - inference:
     on_failure:
     - append:
         field: claude_code.prompt_classification.errors
         value: 'moderation: {{{_ingest.on_failure_message}}}'
         tag: classify-moderation_on_failure_append_claude_code_prompt_classification_errors
-    target_field: _ml.moderation
+    target_field: claude_code.tmp.ml.moderation
     inference_config:
       zero_shot_classification:
         multi_label: true
@@ -246,20 +510,53 @@ processors:
     if: ctx.message instanceof String && ctx.message.trim().length() >= 20
 - script:
     ignore_failure: true
-    description: Elapsed ms of the preceding inference step (zeroshot_moderation_ms)
+    description: Record the duration of the preceding model call in claude_code.inference.steps.zeroshot_moderation_ms.
     tag: inference-timer-moderation
     params:
       step: zeroshot_moderation_ms
     if: ctx.message instanceof String && ctx.message.trim().length() >= 20
     lang: painless
-    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+    source: |
+      // Elapsed time since the previous mark, in ms with one decimal. The step is recorded
+      // in claude_code.inference.<step> when params.top is set, otherwise in
+      // claude_code.inference.steps.<step>. Then the mark moves to now.
+      long n = System.nanoTime();
+      Map cc = ctx.claude_code;
+      if (cc == null) {
+        cc = new HashMap();
+        ctx.claude_code = cc;
+      }
+      Map tmp = cc.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        cc.tmp = tmp;
+      }
+      if (tmp.inf_mark != null) {
+        Map inf = cc.inference;
+        if (inf == null) {
+          inf = new HashMap();
+          cc.inference = inf;
+        }
+        double ms = Math.round((n - ((Number) tmp.inf_mark).longValue()) / 100000.0) / 10.0;
+        if (params.containsKey('top') && params.top == true) {
+          inf[params.step] = ms;
+        } else {
+          Map st = inf.steps;
+          if (st == null) {
+            st = new HashMap();
+            inf.steps = st;
+          }
+          st[params.step] = ms;
+        }
+      }
+      tmp.inf_mark = n;
 - inference:
     on_failure:
     - append:
         field: claude_code.prompt_classification.errors
         value: 'ner: {{{_ingest.on_failure_message}}}'
         tag: classify-ner_on_failure_append_claude_code_prompt_classification_errors
-    target_field: _ml.ner
+    target_field: claude_code.tmp.ml.ner
     inference_config:
       ner: {}
     field_map:
@@ -268,78 +565,172 @@ processors:
     model_id: dslim__bert-base-ner
 - script:
     ignore_failure: true
-    description: Elapsed ms of the preceding inference step (ner_ms)
+    description: Record the duration of the preceding model call in claude_code.inference.steps.ner_ms.
     tag: inference-timer-ner
     params:
       step: ner_ms
     lang: painless
-    source: long n = System.nanoTime(); if (ctx._inf_mark != null) { Map cc = ctx.claude_code; if (cc == null) { cc = new HashMap(); ctx.claude_code = cc; } Map inf = cc.inference; if (inf == null) { inf = new HashMap(); cc.inference = inf; } double ms = Math.round((n - ((Number) ctx._inf_mark).longValue()) / 100000.0) / 10.0; if (params.containsKey('top') && params.top == true) { inf[params.step] = ms; } else { Map st = inf.steps; if (st == null) { st = new HashMap(); inf.steps = st; } st[params.step] = ms; } } ctx._inf_mark = n;
+    source: |
+      // Elapsed time since the previous mark, in ms with one decimal. The step is recorded
+      // in claude_code.inference.<step> when params.top is set, otherwise in
+      // claude_code.inference.steps.<step>. Then the mark moves to now.
+      long n = System.nanoTime();
+      Map cc = ctx.claude_code;
+      if (cc == null) {
+        cc = new HashMap();
+        ctx.claude_code = cc;
+      }
+      Map tmp = cc.tmp;
+      if (tmp == null) {
+        tmp = new HashMap();
+        cc.tmp = tmp;
+      }
+      if (tmp.inf_mark != null) {
+        Map inf = cc.inference;
+        if (inf == null) {
+          inf = new HashMap();
+          cc.inference = inf;
+        }
+        double ms = Math.round((n - ((Number) tmp.inf_mark).longValue()) / 100000.0) / 10.0;
+        if (params.containsKey('top') && params.top == true) {
+          inf[params.step] = ms;
+        } else {
+          Map st = inf.steps;
+          if (st == null) {
+            st = new HashMap();
+            inf.steps = st;
+          }
+          st[params.step] = ms;
+        }
+      }
+      tmp.inf_mark = n;
 - script:
     tag: aggregate
+    description: >-
+      Collect the model outputs from claude_code.tmp.ml into
+      claude_code.prompt_classification: scores for every model, categories (<group>:<label>,
+      pii:<type>) for results at or above their thresholds in params, the named entities by
+      type, and flagged when any category in a flag list is hit.
     source: |
-      // probability of one class from a text_classification result (top_classes = all classes)
+      // prob() returns the probability of one class from a text_classification result,
+      // which lists every class (num_top_classes: -1).
       def prob(def r, String label) {
-        if (r == null || r.top_classes == null) { return null; }
-        for (def c : r.top_classes) { if (c.class_name == label) { return c.class_probability; } }
+        if (r == null || r.top_classes == null) {
+          return null;
+        }
+        for (def c : r.top_classes) {
+          if (c.class_name == label) {
+            return c.class_probability;
+          }
+        }
         return null;
       }
 
-      // Collect model outputs from _ml.* into claude_code.prompt_classification
-      def ml = ctx._ml;
-      if (ml == null) { return; }
+      def ml = ctx.claude_code.tmp?.ml;
+      if (ml == null) {
+        return;
+      }
       def pc = ctx.claude_code.prompt_classification;
-      if (pc == null) { pc = new HashMap(); ctx.claude_code.prompt_classification = pc; }
+      if (pc == null) {
+        pc = new HashMap();
+        ctx.claude_code.prompt_classification = pc;
+      }
       List cats = new ArrayList();
       Map scores = new HashMap();
       boolean flagged = false;
 
-      // Binary classifiers (scores always kept; members of the 'agree' set only flag when all of them pass)
-      boolean agreeAll = true; boolean agreeAny = false;
+      // Binary classifiers. Scores are always kept. A classifier marked agree flags only
+      // when every agree classifier passes its threshold; the others flag on their own.
+      boolean agreeAll = true;
+      boolean agreeAny = false;
       for (def b : params.binary) {
         def p = prob(ml[b.name], b.label);
-        if (p == null) { if (b.agree == true) { agreeAll = false; } continue; }
+        if (p == null) {
+          if (b.agree == true) {
+            agreeAll = false;
+          }
+          continue;
+        }
         scores[b.category] = p;
-        if (b.agree == true) { agreeAny = true; if (p < b.t) { agreeAll = false; } }
-        else if (p >= b.t) { cats.add(b.category); flagged = true; }
+        if (b.agree == true) {
+          agreeAny = true;
+          if (p < b.t) {
+            agreeAll = false;
+          }
+        } else if (p >= b.t) {
+          cats.add(b.category);
+          flagged = true;
+        }
       }
       if (agreeAny && agreeAll) {
-        for (def b : params.binary) { if (b.agree == true) { cats.add(b.category); } }
+        for (def b : params.binary) {
+          if (b.agree == true) {
+            cats.add(b.category);
+          }
+        }
         flagged = true;
       }
 
-      // Zero-shot groups: multi-label -> list of keys; single-label -> top key + confidence
+      // Zero-shot groups. A multi-label group gives the list of labels at or above its
+      // threshold; a single-label group gives its top label and confidence.
       for (def g : params.zero_shot) {
         def r = ml[g.name];
-        if (r == null || r.top_classes == null || r.top_classes.isEmpty()) { continue; }
-        // per-label scores: scores.<group>.<key>
+        if (r == null || r.top_classes == null || r.top_classes.isEmpty()) {
+          continue;
+        }
+        // Per-label scores: scores.<group>.<key>.
         Map gs = new HashMap();
-        for (def lc : r.top_classes) { gs[g.keys.getOrDefault(lc.class_name, lc.class_name)] = lc.class_probability; }
+        for (def lc : r.top_classes) {
+          gs[g.keys.getOrDefault(lc.class_name, lc.class_name)] = lc.class_probability;
+        }
         scores[g.name] = gs;
+
         if (g.multi) {
           List out = new ArrayList();
-          // optional corroboration: another model's score must also be elevated
+          // Optional corroboration: another model's score must also be elevated.
           boolean corroborated = true;
           if (g.corroborate != null) {
             corroborated = false;
-            for (def e : g.corroborate.entrySet()) { def v = scores[e.getKey()]; if (v != null && v >= e.getValue()) { corroborated = true; } }
+            for (def e : g.corroborate.entrySet()) {
+              def v = scores[e.getKey()];
+              if (v != null && v >= e.getValue()) {
+                corroborated = true;
+              }
+            }
           }
           for (def c : r.top_classes) {
-            if (!corroborated || c.class_probability < g.t) { continue; }
+            if (!corroborated || c.class_probability < g.t) {
+              continue;
+            }
             String k = g.keys.getOrDefault(c.class_name, c.class_name);
             out.add(k);
             cats.add(g.name + ':' + k);
-            if (g.flag.contains(k)) { flagged = true; }
+            if (g.flag.contains(k)) {
+              flagged = true;
+            }
           }
-          if (!out.isEmpty()) { pc[g.name] = out; }
+          if (!out.isEmpty()) {
+            pc[g.name] = out;
+          }
         } else {
-          // optional risk score: summed probability of all non-benign labels
+          // Optional risk score: the summed probability of all non-benign labels. When no
+          // single label passes, a risk at or above risk_t marks the group suspicious.
           if (g.risk_t != null) {
             double risk = 0;
-            for (def rc : r.top_classes) { if (!g.benign.contains(g.keys.getOrDefault(rc.class_name, rc.class_name))) { risk += rc.class_probability; } }
+            for (def rc : r.top_classes) {
+              if (!g.benign.contains(g.keys.getOrDefault(rc.class_name, rc.class_name))) {
+                risk += rc.class_probability;
+              }
+            }
             scores[g.name + '_risk'] = risk;
             def c0 = r.top_classes[0];
-            boolean topHit = c0.class_probability >= g.t && !g.benign.contains(g.keys.getOrDefault(c0.class_name, c0.class_name));
-            if (g.risk_t > 0 && !topHit && risk >= g.risk_t) { pc[g.name] = 'suspicious'; cats.add(g.name + ':suspicious'); flagged = true; }
+            boolean topHit = c0.class_probability >= g.t
+                && !g.benign.contains(g.keys.getOrDefault(c0.class_name, c0.class_name));
+            if (g.risk_t > 0 && !topHit && risk >= g.risk_t) {
+              pc[g.name] = 'suspicious';
+              cats.add(g.name + ':suspicious');
+              flagged = true;
+            }
           }
           def c = r.top_classes[0];
           String top = g.keys.getOrDefault(c.class_name, c.class_name);
@@ -348,28 +739,43 @@ processors:
             pc[g.name] = k;
             pc[g.name + '_confidence'] = c.class_probability;
             cats.add(g.name + ':' + k);
-            if (g.flag.contains(k)) { flagged = true; }
+            if (g.flag.contains(k)) {
+              flagged = true;
+            }
           }
         }
       }
 
-      // NER -> entities by type, plus pii:<type> categories
+      // NER: entities by type, plus pii:<type> categories.
       Map entities = new HashMap();
       if (ml.ner?.entities != null) {
         for (def e : ml.ner.entities) {
-          if (e.class_probability < params.t_entity || params.ner_ignore.contains(e.entity)) { continue; }
+          if (e.class_probability < params.t_entity || params.ner_ignore.contains(e.entity)) {
+            continue;
+          }
           String k = params.ner_types.getOrDefault(e.class_name, 'misc');
-          if (!entities.containsKey(k)) { entities[k] = new ArrayList(); }
-          if (!entities[k].contains(e.entity)) { entities[k].add(e.entity); }
+          if (!entities.containsKey(k)) {
+            entities[k] = new ArrayList();
+          }
+          if (!entities[k].contains(e.entity)) {
+            entities[k].add(e.entity);
+          }
         }
         for (String k : entities.keySet()) {
-          if (k != 'misc') { cats.add('pii:' + k); if (params.pii_flag_types.contains(k)) { flagged = true; } }
+          if (k != 'misc') {
+            cats.add('pii:' + k);
+            if (params.pii_flag_types.contains(k)) {
+              flagged = true;
+            }
+          }
         }
       }
 
       pc.categories = cats;
       pc.scores = scores;
-      if (!entities.isEmpty()) { pc.entities = entities; }
+      if (!entities.isEmpty()) {
+        pc.entities = entities;
+      }
       pc.flagged = flagged;
     lang: painless
     params:
@@ -509,33 +915,57 @@ processors:
       pii_flag_types:
       - person
 - script:
-    description: Surface transcript-level secret findings (claude_code.secrets) in the prompt classification
+    description: >-
+      Copy the transcript pipeline's secret findings (claude_code.secrets: count, types and
+      findings) into claude_code.prompt_classification.secrets, add a secret:<type>
+      category for each type, and set flagged, so that one field set covers every reason a
+      prompt is flagged.
     tag: secrets
     source: |
       def s = ctx.claude_code.secrets;
       def pc = ctx.claude_code.prompt_classification;
-      if (pc == null) { pc = new HashMap(); ctx.claude_code.prompt_classification = pc; }
-      Map copy = new HashMap(); copy.put('count', s.count); copy.put('types', s.types); copy.put('findings', s.findings);
+      if (pc == null) {
+        pc = new HashMap();
+        ctx.claude_code.prompt_classification = pc;
+      }
+      Map copy = new HashMap();
+      copy.put('count', s.count);
+      copy.put('types', s.types);
+      copy.put('findings', s.findings);
       pc.secrets = copy;
-      if (pc.categories == null) { pc.categories = new ArrayList(); }
-      for (def t : s.types) { pc.categories.add('secret:' + t); }
+      if (pc.categories == null) {
+        pc.categories = new ArrayList();
+      }
+      for (def t : s.types) {
+        pc.categories.add('secret:' + t);
+      }
       pc.flagged = true;
     lang: painless
     if: ctx.claude_code?.secrets?.types != null
 - remove:
-    field: _ml
+    description: Remove the raw model outputs.
+    field: claude_code.tmp.ml
     ignore_missing: true
     tag: remove_ml
 on_failure:
 - append:
     tag: append_error_message_on_failure
     field: error.message
-    value: Processor '{{{ _ingest.on_failure_processor_type }}}' {{{#_ingest.on_failure_processor_tag}}}with tag '{{{ _ingest.on_failure_processor_tag }}}' {{{/_ingest.on_failure_processor_tag}}}in pipeline '{{{ _ingest.pipeline }}}' failed with message '{{{ _ingest.on_failure_message }}}'
+    value: >-
+      Processor '{{{ _ingest.on_failure_processor_type }}}'
+      {{{#_ingest.on_failure_processor_tag}}}with tag '{{{ _ingest.on_failure_processor_tag }}}'
+      {{{/_ingest.on_failure_processor_tag}}}in pipeline '{{{ _ingest.pipeline }}}'
+      failed with message '{{{ _ingest.on_failure_message }}}'
 - set:
     tag: set_event_kind_pipeline_error
     field: event.kind
     value: pipeline_error
+- append:
+    tag: append_tags_preserve_original_event_on_failure
+    field: tags
+    value: preserve_original_event
+    allow_duplicates: false
 - remove:
-    field: _ml
+    field: claude_code.tmp.ml
     ignore_missing: true
     tag: remove_temp_fields_on_failure
